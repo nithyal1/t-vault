@@ -574,10 +574,29 @@
             getCertificates("", null, null,"internal");
         };
 
-        $scope.getExtCertificates = function () {   
+        $scope.getExtCertificates = function () { 
+        	 $scope.selectedTab = 1;
+        	$scope.isInternalCert = false; 
+        	$scope.isExternalCert = true;   
+        	if($scope.certSearchValue == ""){
+        		getCertificates("", null, null,"External");
+        	}else{
+        		getCertificates($scope.certSearchValue, null, null,"External");
+        	}
         	
-        	getCertificates("", null, null,"External");
         }
+        
+        $scope.getInternalCertificates = function () { 
+        	$scope.isInternalCert = true; 
+        	$scope.isExternalCert = false;         	
+        	 $scope.selectedTab = 0;
+        	 if($scope.certSearchValue == ""){
+        		 getCertificates("", null, null,"Internal");
+        	 }else{
+         		getCertificates($scope.certSearchValue, null, null,"Internal");
+         	}
+        }
+        
         
         //Get ssl certificate
         var getCertificates =  function (searchCert, limit, offset, certType) {
@@ -586,7 +605,6 @@
             $scope.certificateData = {"certificates": []};
             $scope.isLoadingData = true;
             $scope.isLoadingCerts = true;            
-            
             var limitQuery = "";
             var offsetQuery= "";
             var certTypeQuery= "";
@@ -602,10 +620,8 @@
             var updatedUrlOfEndPoint = ModifyUrl.addUrlParameteres('getCertificates',"certificateName="+searchCert + limitQuery + offsetQuery+certTypeQuery);
             
             AdminSafesManagement.getCertificates(null, updatedUrlOfEndPoint).then(function (response) {            	
-            	if(certType=="External"){
-            		$scope.selectedIndex =9;
-            		}
-                if (UtilityService.ifAPIRequestSuccessful(response)) {
+            	
+                if (UtilityService.ifAPIRequestSuccessful(response)) {                	
                     if(response.data != "" && response.data != undefined) {
                         $scope.certificateData.certificates = response.data.keys;
                         $scope.numOfCertificates = $scope.certificateData.certificates.length;
@@ -655,14 +671,22 @@
         	if($scope.selectedIndex ==3){
             if ($scope.searchValue != '' && $scope.searchValue != undefined && $scope.searchValue.length > 2 && $scope.certSearchValue != $scope.searchValue) {                
             	$scope.certSearchValue = $scope.searchValue;
-                getCertificates($scope.certSearchValue, null, null,"internal");
+            	if($scope.selectedTab == 1){
+                getCertificates($scope.certSearchValue, null, null,"external");
+            	}else {
+            		getCertificates($scope.certSearchValue, null, null,"internal");
+            	}
             }
             if($scope.certSearchValue != $scope.searchValue && $scope.searchValue != undefined && $scope.searchValue.length ==1) {            	            	
                 $scope.certSearchValue = $scope.searchValue;                
             }
             if($scope.certSearchValue != $scope.searchValue) {            	
                 $scope.certSearchValue = $scope.searchValue;
-                getCertificates("", null, null, "internal");
+                if($scope.selectedTab == 1){
+                    getCertificates("", null, null,"external");
+                	}else {
+                		getCertificates("", null, null,"internal");
+                	}
             }
         }
         }
