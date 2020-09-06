@@ -394,6 +394,10 @@ readTextFile("../apiUrls.json");
             name: 'deleteCertificate',
             url: '/v2/certificates/{certName}/{certType}',
             method: 'DELETE'
+        } ,{
+            name: 'checkRevokestatus',
+            url: '/v2/sslcert/checkstatus/{certificate_name}/{certificate_type}',
+            method: 'GET'
         }
     ]
     });

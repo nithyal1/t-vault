@@ -47,6 +47,7 @@
         $scope.isCertificateOwner = false;
         $scope.renewButtonShow = true;
         $scope.hideSudoPolicy = false;
+        $scope.revokeButtonShow = true;
         $scope.awsConfPopupObj = {
             "auth_type":"",
             "role": "",
@@ -606,7 +607,15 @@
                                 }else {
                                     $scope.renewButtonShow = true;
                                 }
-                                hideUserSudoPolicy();
+                                if($scope.certificate.certificateStatus=="Revoked"){
+                                var updatedUrlEndPoint = RestEndpoints.baseURL + "/v2/sslcert/checkstatus/" + certName+"/"+ certificateType;
+                                AdminSafesManagement.checkRevokestatus(null, updatedUrlEndPoint).then(function (responses) {
+                                	if (UtilityService.ifAPIRequestSuccessful(responses)) {
+                                		$scope.revokeButtonShow = false;
+                                	}
+                                    });
+                            }
+                                	hideUserSudoPolicy();
                             }
                             catch (e) {
                                 console.log(e);

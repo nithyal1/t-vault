@@ -4827,12 +4827,14 @@ public class SSLCertificateService {
 		}
 				
 		if(dataObject!=null) {
-		dataMetaDataParams = new Gson().fromJson(dataObject.toString(), Map.class);	
-		if(certOwnerEmailId.equalsIgnoreCase(dataMetaDataParams.get("certOwnerEmailId")))	{
-			isValidEmail=false;
-		}
+		dataMetaDataParams = new Gson().fromJson(dataObject.toString(), Map.class);		
 		dataMetaDataParams.put("certOwnerNtid", certOwnerNtId);
 		dataMetaDataParams.put("certOwnerEmailId", certOwnerEmailId);
+		}
+		
+		if((Objects.nonNull(metaDataParams)) && (Objects.nonNull(metaDataParams.get("requestStatus")))
+                && metaDataParams.get("requestStatus").equalsIgnoreCase(SSLCertificateConstants.REQUEST_PENDING_APPROVAL)) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"errors\":[\"Certificate may not be approved or rejected from NCLM\"]}");
 		}
 		
 		if(!isValidEmail) {
@@ -4881,7 +4883,7 @@ public class SSLCertificateService {
                     build()));
 			
 			return ResponseEntity.status(HttpStatus.OK)
-					.body("{\"messages\":[\"" + "Certificate owner Transferred Successfully" + "\"]}");
+					.body("{\"messages\":[\"" + "Certificate Owner Transferred Successfully" + "\"]}");
 		} else {
 			log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
 					.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
@@ -4891,7 +4893,7 @@ public class SSLCertificateService {
 					.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL).toString())
 					.build()));
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-					.body("{\"errors\":[\"" + "Certificate owner Transfer failed" + "\"]}");
+					.body("{\"errors\":[\"" + "Certificate Owner Transfer failed" + "\"]}");
 		}
 	
 	} catch (Exception e) {
@@ -5927,6 +5929,79 @@ public class SSLCertificateService {
 		Pattern pattern = Pattern.compile(emailPattern);
 		Matcher matcher = pattern.matcher(email);
 		return matcher.matches();
+	}
+	
+	/**
+	 * Method to check certificate status
+	 * certificate details
+	 * @param certName
+	 * @param certType
+	 * @param userDetails
+	 * @return
+	 */
+	public ResponseEntity<String> checkCertificateStatus(String certName, String certType,
+			UserDetails userDetails) {
+		if (!isValidInputs(certName, certType)) {
+			log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+					.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER))
+					.put(LogMessage.ACTION, "checkCertificateStatus")
+					.put(LogMessage.MESSAGE, "Invalid user inputs")
+					.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).build()));
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[\"Invalid input values\"]}");
+		}
+		String metaDataPath = (certType.equalsIgnoreCase("internal")) ? SSLCertificateConstants.SSL_CERT_PATH
+				: SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH;
+		String certificatePath = metaDataPath + '/' + certName;
+		String authToken = null;
+		if (!ObjectUtils.isEmpty(userDetails)) {
+			if (userDetails.isAdmin()) {
+				authToken = userDetails.getClientToken();
+			} else {
+				authToken = userDetails.getSelfSupportToken();
+			}
+			SSLCertificateMetadataDetails certificateMetaData = certificateUtils.getCertificateMetaData(authToken,
+					certName, certType);
+			if (ObjectUtils.isEmpty(certificateMetaData)) {
+				log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+						.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER))
+						.put(LogMessage.ACTION, "checkCertificateStatus")
+						.put(LogMessage.MESSAGE, "No certificate available")
+						.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).build()));
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body("{\"errors\":[\"No certificate available\"]}");
+			} else {
+				int containerId = certificateMetaData.getContainerId();
+				String nclmAccessToken = getNclmToken();
+				try {
+					CertificateData certData = getLatestCertificate(certName,nclmAccessToken, containerId);
+					if(!ObjectUtils.isEmpty(certData)) {
+						if(!certData.getCertificateStatus().equalsIgnoreCase("Revoked")) {
+							 return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("{\"errors\":[\"Certificate is in Revoke Requested status\"]}");
+						}
+					}else {
+						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+								.body("{\"errors\":[\"Certificate details not available in NCLM \"]}");
+					}
+				} catch (Exception e) {
+					log.error(JSONUtil.getJSON(ImmutableMap.<String, String> builder()
+							.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
+							.put(LogMessage.ACTION, String.format("Inside  Exception = [%s] =  Message [%s]",
+									Arrays.toString(e.getStackTrace()), e.getMessage()))
+							.build()));
+					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+							.body("{\"errors\":[\"" + e.getMessage() + "\"]}");
+				}	
+				return ResponseEntity.status(HttpStatus.OK).body("{\"messages\":[\"Certifictae is in Revoked status \"]}");
+			}
+		} else {
+			log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+					.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER))
+					.put(LogMessage.ACTION, SSLCertificateConstants.VALIDATE_CERTIFICATE_DETAILS_MSG)
+					.put(LogMessage.MESSAGE, "Access denied: No permission to add users to this certificate")
+					.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).build()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("{\"errors\":[\"Access denied: No permission to access this certificate\"]}");
+		}
 	}
     
 }

@@ -2366,7 +2366,13 @@
                 $scope.certTransferInValid = true;
                 $scope.certOwnerEmailErrorMessage = '';
                 $scope.certOwnerTransferErrorMessage = '';
+                if(certDetails.requestStatus!=null && certDetails.requestStatus!=undefined && certDetails.requestStatus=="Pending Approval"){
+                	$scope.isLoadingData = false;
+                	$scope.viewEditErrorMessage = "Certificate may not be approved or rejected from NCLM";
+                    $scope.validateCertificateDetailsPopUp();
+                }else{
                 Modal.createModal('md', 'transferCertPopup.html', 'AdminCtrl', $scope);
+            }
             };
             
             $scope.ownerEmailValidation = function () {
