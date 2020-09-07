@@ -607,12 +607,20 @@
                                 }else {
                                     $scope.renewButtonShow = true;
                                 }
+                                
                                 if($scope.certificate.certificateStatus=="Revoked"){
                                 var updatedUrlEndPoint = RestEndpoints.baseURL + "/v2/sslcert/checkstatus/" + certName+"/"+ certificateType;
                                 AdminSafesManagement.checkRevokestatus(null, updatedUrlEndPoint).then(function (responses) {
                                 	if (UtilityService.ifAPIRequestSuccessful(responses)) {
                                 		$scope.revokeButtonShow = false;
                                 	}
+                                    },
+                                    function (error) {
+                                        // Error handling function                                        
+                                        if (error.data.errors[0] == "NCLM services are down. Please try after some time") {
+                                        	$scope.errorMessage = error.data.errors[0];
+                                        }
+                                        $scope.error('md');
                                     });
                             }
                                 	hideUserSudoPolicy();

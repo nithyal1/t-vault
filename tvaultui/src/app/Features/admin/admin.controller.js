@@ -754,10 +754,14 @@
             },
             function (error) {
                 // Error handling function
-                console.log(error);
+                console.log(error);                
                 $scope.showInputLoader.show = false;
                 $scope.isTargetSystemListLoading = false;
+                if (error.data.errors[0] == "NCLM services are down. Please try after some time") {
+                	$scope.errorMessage = error.data.errors[0];
+                }else{
                 $scope.errorMessage = UtilityService.getAParticularErrorMessage('ERROR_GENERAL');
+            }
                 $scope.error('md');
             });
         }

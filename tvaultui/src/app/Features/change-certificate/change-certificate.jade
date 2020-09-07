@@ -214,19 +214,17 @@ script(src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
                                     .common-form-label Enroll Service 
                                     input.form-control.input-box-style(ng-if="certificateTypeVal=='Internal'" id="enrolService" ng-init="enrolService='T-Mobile Issuing CA 01 - SHA2'" ng-model="enrolService" ng-disabled="changeCertificateHeader == 'EDIT CERTIFICATE'"  name="certificateStatus"  required)
                                     input.form-control.input-box-style(ng-if="certificateTypeVal=='External'" id="enrolService" ng-init="enrolService='Entrust CA'" ng-model="enrolService" ng-disabled="changeCertificateHeader == 'EDIT CERTIFICATE'"  name="certificateStatus"  required)
-                        
-                        
+                            
                        
-                                    
-                      .col-lg-6.col-md-12.col-sm-12.col-xs-12.full-row-fix.col-lg-offset-1.col-lg-offset-1  
                         .row.middle
                           .common-form-row.clearfix
                             .col-lg-5.col-md-12.col-sm-12.col-xs-12.full-row-fix
                               .row
                                 .details-input-group.col-lg-12.col-md-12.col-sm-12.col-xs-12
-                                    .common-form-label Subject Alternate Names                                  
+                                    .common-form-label Subject Alternate Names                                
                                     input.form-control.input-box-style.dns-list(id="dnslist" ng-value="certificate.dnsNames"  ng-model="certificate.dnsNames" ng-disabled="true"  name="certificateStatus"  required)
-                                    li( ng-repeat="item in certificate.dnsNames" ) {{item}}                             
+                                    div( ng-repeat="item in certificate.dnsNames" ) {{item}}
+                                                             
                             
                               
 
