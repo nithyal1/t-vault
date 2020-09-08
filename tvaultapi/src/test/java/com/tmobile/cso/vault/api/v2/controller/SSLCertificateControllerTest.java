@@ -339,7 +339,7 @@ public class SSLCertificateControllerTest {
 		ResponseEntity<String> responseEntityExpected = ResponseEntity.status(HttpStatus.OK).body(responseJson);
 		CertificateGroup certGroup = new CertificateGroup("certificatename.t-mobile.com","testgroup","read", "internal");
 		String inputJson =new ObjectMapper().writeValueAsString(certGroup);
-		when(sslCertificateService.addingGroupToCertificate(eq("5PDrOhsy4ig8L3EpsJZSLAMg"), Mockito.any(CertificateGroup.class))).thenReturn(responseEntityExpected);
+		when(sslCertificateService.addingGroupToCertificate(eq("5PDrOhsy4ig8L3EpsJZSLAMg"), Mockito.any(CertificateGroup.class), Mockito.any(UserDetails.class))).thenReturn(responseEntityExpected);
 		 mockMvc.perform(MockMvcRequestBuilders.post("/v2/ss/certificate/group").requestAttr("UserDetails", userDetails)
 	                .header("vault-token", "5PDrOhsy4ig8L3EpsJZSLAMg")
 	                .header("Content-Type", "application/json;charset=UTF-8")
@@ -402,19 +402,27 @@ public class SSLCertificateControllerTest {
 
 	}
 	
-	@Test
-	public void testCheckCertificateStatus() throws Exception {
-		String expected = "{\"message\":[\"Certifictae is in Revoked status\"]}";
-		ResponseEntity<String> responseEntityExpected = ResponseEntity.status(HttpStatus.OK).body(expected);
-		when(sslCertificateService.checkCertificateStatus(Mockito.anyString(),
-				Mockito.anyString(), Mockito.anyObject())).thenReturn(responseEntityExpected);
-		MvcResult result = mockMvc
-				.perform(MockMvcRequestBuilders.get("/v2/sslcert/checkstatus/certificatename.t-mobile.com/external")
-						.header("vault-token", token).header("Content-Type", "application/json;charset=UTF-8")
-						.requestAttr("UserDetails", userDetails).content(expected))
-				.andExpect(status().isOk()).andReturn();
-
-		String actual = result.getResponse().getContentAsString();
-		assertEquals(expected, actual);
-	}
+	
+	
+	 @Test
+	    public void test_getAllCertificatesOnCertType_success() throws Exception{
+		  // Mock response        
+	        when(sslCertificateService.getAllCertificatesOnCertType(userDetails, "internal")).thenReturn(new ResponseEntity<>(HttpStatus.OK));
+	        assertEquals(HttpStatus.OK, sslCertificateService.getAllCertificatesOnCertType(userDetails, "internal").getStatusCode());
+	    }
+	 
+	 @Test	
+		public void testCheckCertificateStatus() throws Exception {	
+			String expected = "{\"message\":[\"Certifictae is in Revoked status\"]}";	
+			ResponseEntity<String> responseEntityExpected = ResponseEntity.status(HttpStatus.OK).body(expected);	
+			when(sslCertificateService.checkCertificateStatus(Mockito.anyString(),	
+					Mockito.anyString(), Mockito.anyObject())).thenReturn(responseEntityExpected);	
+			MvcResult result = mockMvc	
+					.perform(MockMvcRequestBuilders.get("/v2/sslcert/checkstatus/certificatename.t-mobile.com/external")	
+							.header("vault-token", token).header("Content-Type", "application/json;charset=UTF-8")	
+							.requestAttr("UserDetails", userDetails).content(expected))	
+					.andExpect(status().isOk()).andReturn();	
+			String actual = result.getResponse().getContentAsString();	
+			assertEquals(expected, actual);	
+		}
 }

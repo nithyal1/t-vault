@@ -46,7 +46,7 @@ readTextFile("../apiUrls.json");
         baseURL: JSON.parse(sessionStorage.getItem('ApiUrls')).baseURL,
         // written below separately as request requires timeout promise 
         usersGetData : '/v2/ldap/users?UserPrincipalName=',
-        groupGetData: '/v2/ldap/groups?groupName=',
+        groupGetDataFromAAD: '/v2/azure/groups?name=',
         usersGetDataUsingCorpID: '/v2/ldap/corpusers?CorpId=', 
         //baseURL : '/vault'
         endpoints: [{
@@ -369,7 +369,7 @@ readTextFile("../apiUrls.json");
         }, {
             name: 'addGroupToCertificate',
             url: '/v2/sslcert/group',
-            method: 'POST'  
+            method: 'POST'
         }, {
             name: 'deleteUserPermissionFromCertificate',
             url: '/v2/sslcert/user',
@@ -394,11 +394,19 @@ readTextFile("../apiUrls.json");
             name: 'deleteCertificate',
             url: '/v2/certificates/{certName}/{certType}',
             method: 'DELETE'
-        } ,{
-            name: 'checkRevokestatus',
-            url: '/v2/sslcert/checkstatus/{certificate_name}/{certificate_type}',
-            method: 'GET'
-        }
+        }, {
+             name: 'getAuthUrl',
+             url: '/v2/auth/oidc/auth_url',
+             method: 'POST'
+         }, {
+             name: 'getCallback',
+             url: '/v2/auth/oidc/callback',
+             method: 'GET'
+         },{	
+             name: 'checkRevokestatus',	
+             url: '/v2/sslcert/checkstatus/{certificate_name}/{certificate_type}',	
+             method: 'GET'	
+         }
     ]
     });
 })( angular.module( 'vault.constants.RestEndpoints', []));

@@ -586,7 +586,8 @@
                                     createDate: object.createDate || $stateParams.certificateObject.createDate || '',
                                     expiryDate: object.expiryDate || $stateParams.certificateObject.expiryDate || '',
                                     certificateStatus: object.certificateStatus || $stateParams.certificateObject.certificateStatus || '',
-                                    certificateId: object.certificateId || $stateParams.certificateObject.certificateId || ''
+                                    certificateId: object.certificateId || $stateParams.certificateObject.certificateId || '',
+                                    dnsNames: object.dnsNames || $stateParams.certificateObject.dnsNames || ''
                                 }
 
                                 if($scope.certificate.certType.toLowerCase() === "internal"){
@@ -607,6 +608,11 @@
                                 }else {
                                     $scope.renewButtonShow = true;
                                 }
+                                
+                                $scope.dnsList = [];
+                                for (var i=0;i<$scope.certificate.dnsNames.length;i++) {
+                                	$scope.dnsList.push($scope.certificate.dnsNames[i]+"\n");
+                                    }
                                 
                                 if($scope.certificate.certificateStatus=="Revoked"){
                                 var updatedUrlEndPoint = RestEndpoints.baseURL + "/v2/sslcert/checkstatus/" + certName+"/"+ certificateType;
