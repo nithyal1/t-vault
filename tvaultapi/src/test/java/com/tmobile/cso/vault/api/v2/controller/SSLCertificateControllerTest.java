@@ -467,8 +467,8 @@ public class SSLCertificateControllerTest {
 	 @Test
 	    public void test_onboardSingleCertificates() throws Exception {
 	        // Mock response        
-	        when(sslCertificateService.onboardSingleCert(userDetails,"5PDrOhsy4ig8L3EpsJZSLAMg","internal","testcert","tvt")).thenReturn(new ResponseEntity<>(HttpStatus.OK));
-	        assertEquals(HttpStatus.OK, sslCertificateService.onboardSingleCert(userDetails,"5PDrOhsy4ig8L3EpsJZSLAMg","internal","testcert","tvt").getStatusCode());
+	        when(sslCertificateService.onboardSingleCert(userDetails,"5PDrOhsy4ig8L3EpsJZSLAMg","internal","testcert","tvt","","")).thenReturn(new ResponseEntity<>(HttpStatus.OK));
+	        assertEquals(HttpStatus.OK, sslCertificateService.onboardSingleCert(userDetails,"5PDrOhsy4ig8L3EpsJZSLAMg","internal","testcert","tvt","","").getStatusCode());
 	    }
 
 	@Test
@@ -560,3 +560,4 @@ public class SSLCertificateControllerTest {
         assertEquals(HttpStatus.OK, SslCertificateController.onboardSSLCertificate(httpServletRequest, token, sSLCertificateRequest).getStatusCode());
     }
 }
+

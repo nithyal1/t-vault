@@ -443,9 +443,10 @@ public class SSLCertificateController {
 	@GetMapping(value="/v2/auth/sslcert/onboardsinglecertificate",produces="application/json")
 	public ResponseEntity<String> onboardSingleCertificate(HttpServletRequest request, @RequestHeader(value="vault-token") String token,
 			@RequestParam(name = "certificateType", required = false) String certType, @RequestParam(name = "certificateName", required = false) String commonname,
-			@RequestParam(name = "applicationName", required = false) String appTag	) throws Exception {
+			@RequestParam(name = "applicationName", required = false) String appTag, @RequestParam(name = "projectLeadEmailId", required = false) String projectLeadEmailId,
+			@RequestParam(name = "notificationEmails", required = false) String notificationEmails) throws Exception {
 		UserDetails userDetails = (UserDetails) request.getAttribute(USER_DETAILS_STRING);
-		return sslCertificateService.onboardSingleCert(userDetails, token, certType, commonname, appTag);
+		return sslCertificateService.onboardSingleCert(userDetails, token, certType, commonname, appTag, notificationEmails, projectLeadEmailId);
 	}
 
 	/**
@@ -531,6 +532,7 @@ public class SSLCertificateController {
 		return sslCertificateService.getAllOnboardPendingCertificates(token, userDetails);
 	}
 
+
 	/**
 	 * To Onboard single NCLM certificates to tvault
 	 *
@@ -548,5 +550,6 @@ public class SSLCertificateController {
 		UserDetails userDetails = (UserDetails) request.getAttribute(USER_DETAILS_STRING);
 		return sslCertificateService.onboardSSLcertificate(userDetails, token, sslCertificateRequest);
 	}
+
 
 }

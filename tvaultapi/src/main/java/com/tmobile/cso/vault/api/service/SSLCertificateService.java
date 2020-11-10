@@ -1,4 +1,3 @@
-
 // =========================================================================
 // Copyright 2020 T-Mobile, US
 // 
@@ -7326,895 +7325,909 @@ public ResponseEntity<String> getRevocationReasons(Integer certificateId, String
 
 	//###################################################  ONBOARD CERTIFICATES	#######################################################
 	
-			/**
-			 * Login to pacbot to get bearer token
-			 * @param clientid
-			 * @param clientsecret
-			 * @return
-			 * @throws Exception
-			 */
-		    private String authenticatePacbot(String clientid,String clientsecret) throws Exception {
-		        String certManagerAPIEndpoint = pacbotGetTokenEndpoint;
-		        JsonParser jsonParser = new JsonParser();
-		        String encoding = Base64.getEncoder().encodeToString((clientid+":"+clientsecret).getBytes());
-		        
-		        		String authHeader = "Basic " + new String(encoding);
-		        		String responseStr = "";
-		        		String bearerToken="";    
-		        
-		        HttpClient httpClient;
-		        try {
-		            httpClient = HttpClientBuilder.create().setSSLHostnameVerifier(
-		                    NoopHostnameVerifier.INSTANCE).
-		                    setSSLContext(
-		                            new SSLContextBuilder().loadTrustMaterial(null,new TrustStrategy() {
-		                                @Override
-		                                public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-		                                    return true;
-		                                }
-		                            }).build()
-		                    ).setRedirectStrategy(new LaxRedirectStrategy()).build();
-		        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e1) {
-		            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                    put(LogMessage.ACTION, "authenticatePacbot").
-		                    put(LogMessage.MESSAGE, String.format ("Failed to get certificates. Failed to create hhtpClient")).
-		                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		                    build()));
-		            return null;
-		        }
-				try {
-					HttpPost postRequest = new HttpPost(certManagerAPIEndpoint);
-				        postRequest.addHeader(HttpHeaders.AUTHORIZATION, authHeader);         
-				               
-				        HttpResponse apiResponse = httpClient.execute(postRequest);
+	/**
+	 * Login to pacbot to get bearer token
+	 * @param clientid
+	 * @param clientsecret
+	 * @return
+	 * @throws Exception
+	 */
+    private String authenticatePacbot(String clientid,String clientsecret) throws Exception {
+        String certManagerAPIEndpoint = pacbotGetTokenEndpoint;
+        JsonParser jsonParser = new JsonParser();
+        String encoding = Base64.getEncoder().encodeToString((clientid+":"+clientsecret).getBytes());
+        
+        		String authHeader = "Basic " + new String(encoding);
+        		String responseStr = "";
+        		String bearerToken="";    
+        
+        HttpClient httpClient;
+        try {
+            httpClient = HttpClientBuilder.create().setSSLHostnameVerifier(
+                    NoopHostnameVerifier.INSTANCE).
+                    setSSLContext(
+                            new SSLContextBuilder().loadTrustMaterial(null,new TrustStrategy() {
+                                @Override
+                                public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                                    return true;
+                                }
+                            }).build()
+                    ).setRedirectStrategy(new LaxRedirectStrategy()).build();
+        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e1) {
+            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "authenticatePacbot").
+                    put(LogMessage.MESSAGE, String.format ("Failed to get certificates. Failed to create hhtpClient")).
+                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                    build()));
+            return null;
+        }
+		try {
+			HttpPost postRequest = new HttpPost(certManagerAPIEndpoint);
+		        postRequest.addHeader(HttpHeaders.AUTHORIZATION, authHeader);         
+		               
+		        HttpResponse apiResponse = httpClient.execute(postRequest);
 
-			            if (apiResponse.getStatusLine().getStatusCode() != 200) {
-			                return null;
-			            }	            
-			            responseStr =  EntityUtils.toString(apiResponse.getEntity());	          
-				} catch (Exception e) {
-					log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                    put(LogMessage.ACTION, "authenticatePacbot").
-		                    put(LogMessage.MESSAGE, String.format ("Pacbot authentication failed.")).
-		                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		                    build()));
-		            return null;
-				}
-				JsonObject res = jsonParser.parse(responseStr).getAsJsonObject();
-		        if(!ObjectUtils.isEmpty(res)) {
-		        	bearerToken = res.get("access_token").getAsString();
-		        	log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                    put(LogMessage.ACTION, "authenticatePacbot").
-		                    put(LogMessage.MESSAGE, String.format ("Pacbot authentication successful.")).
-		                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		                    build()));
-		        }
-		            return bearerToken;
-		        
-		    }
-		    
-		       
-		    /**
-		     * API to onboard all the valid certificates from NCLM in the Venafibin_12345 container to tvault
-		     * @param userDetails
-		     * @param bearerToken
-		     * @return
-		     * @throws Exception 
-		     */
-		    public ResponseEntity<String> onboardCerts(UserDetails userDetails,  String token, Integer from, Integer size) throws Exception {
-		    	JsonArray responseArray;
-		    	ResponseEntity<String> response;
-		    	String bearerToken = authenticatePacbot(pacbotClientId,pacbotClientSecret);
-		    	responseArray = getActiveCertificaesFromPacbot(bearerToken, from, size);
-		    	JsonObject jsonObject;
-		    	int successCount = 0;
+	            if (apiResponse.getStatusLine().getStatusCode() != 200) {
+	                return null;
+	            }	            
+	            responseStr =  EntityUtils.toString(apiResponse.getEntity());	          
+		} catch (Exception e) {
+			log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "authenticatePacbot").
+                    put(LogMessage.MESSAGE, String.format ("Pacbot authentication failed.")).
+                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                    build()));
+            return null;
+		}
+		JsonObject res = jsonParser.parse(responseStr).getAsJsonObject();
+        if(!ObjectUtils.isEmpty(res)) {
+        	bearerToken = res.get("access_token").getAsString();
+        	log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "authenticatePacbot").
+                    put(LogMessage.MESSAGE, String.format ("Pacbot authentication successful.")).
+                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                    build()));
+        }
+            return bearerToken;
+        
+    }
+    
+       
+    /**
+     * API to onboard all the valid certificates from NCLM in the Venafibin_12345 container to tvault
+     * @param userDetails
+     * @param bearerToken
+     * @return
+     * @throws Exception 
+     */
+    public ResponseEntity<String> onboardCerts(UserDetails userDetails,  String token, Integer from, Integer size) throws Exception {
+    	JsonArray responseArray;
+    	ResponseEntity<String> response;
+    	String bearerToken = authenticatePacbot(pacbotClientId,pacbotClientSecret);
+    	responseArray = getActiveCertificaesFromPacbot(bearerToken, from, size);
+    	JsonObject jsonObject;
+    	int successCount = 0;
 
-				if(!ObjectUtils.isEmpty(responseArray) && responseArray.size()>0) {
-					for (int i = 0; i < responseArray.size(); i++) {
-						jsonObject  = responseArray.get(i).getAsJsonObject();
-						if(!isCertAvailableInMetadata(jsonObject, token)) {
-							response = createObjectAndOnboardCert(jsonObject,userDetails);
-							if (response !=null && HttpStatus.OK.equals(response.getStatusCode())) {
-							successCount++;
-							}
-						}
-						else {
-						continue;
-						}
+		if(!ObjectUtils.isEmpty(responseArray) && responseArray.size()>0) {
+			for (int i = 0; i < responseArray.size(); i++) {
+				jsonObject  = responseArray.get(i).getAsJsonObject();
+				if(!isCertAvailableInMetadata(jsonObject, token)) {
+					response = createObjectAndOnboardCert(jsonObject,userDetails);
+					if (response !=null && HttpStatus.OK.equals(response.getStatusCode())) {
+					successCount++;
 					}
-					log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-							put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-							put(LogMessage.ACTION, "onboardCerts").
-							put(LogMessage.MESSAGE, String.format("[%s] - Certificates onboarded successfully.",successCount)).
-							put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-							build()));
-				}	else {
-					log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		   					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		   					put(LogMessage.ACTION, "onboardCerts").
-		   					put(LogMessage.MESSAGE, "No valid certificates available for onbaording").
-		   					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		   					build()));
-		   			
-		   			return ResponseEntity.status(HttpStatus.NO_CONTENT).body("{\"errors\":[\"No certificate available for onbaording.\"]}");
 				}
-		    	return ResponseEntity.status(HttpStatus.OK).body("{\"messages\":[\"ssl certificates onboard completed successfully\"]}");
-		    }
-		    
-		   /**
-		    * To check if metadata is already created for the given certificate. If yes, skip the certificate
-		    * @param jsonObject
-		    * @param token
-		    * @return
-		    */
-		    private boolean isCertAvailableInMetadata(JsonObject jsonObject, String token) {
-		    
-		    boolean isMetadataAvailable = true;
-		    String endPoint = jsonObject.get("commonname").getAsString();
-			String metaDataPath = (jsonObject.get("certType").getAsString().equalsIgnoreCase("internal"))?
-		            SSLCertificateConstants.SSL_CERT_PATH + "/" + endPoint :SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH + "/" + endPoint;
-			Response response = new Response();
-			try {		
-					response = reqProcessor.process("/read", "{\"path\":\"" + metaDataPath + "\"}", token);		
-			} catch (Exception e) {
-				log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
-						.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
-						.put(LogMessage.ACTION, "isCertAvailableInMetadata")
-						.put(LogMessage.MESSAGE, String.format("\"[%s]  - Skipping Onboard flow -  Error occured while checking certificate "
-								+ "is available in metadata.Exception = [%s] =  Message [%s]", 
-								endPoint,Arrays.toString(e.getStackTrace()), response.getResponse()))
-						.build()));
-				 isMetadataAvailable = false;
+				else {
+				continue;
+				}
 			}
-			if (!HttpStatus.OK.equals(response.getHttpstatus())) {
-				log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-							put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-							put(LogMessage.ACTION, "isCertAvailableInMetadata").
-							put(LogMessage.MESSAGE, String.format("[%s] - Metadata is not available.",endPoint)).
-							put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-							build()));
-				isMetadataAvailable = false;
-			}else if (HttpStatus.OK.equals(response.getHttpstatus())) {
-				log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-						put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-						put(LogMessage.ACTION, "isCertAvailableInMetadata").
-						put(LogMessage.MESSAGE, String.format("[%s]  - Skipping Onboard flow -  Certificate already available in metadata. ",endPoint)).
-						put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-						build()));
+			log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+					put(LogMessage.ACTION, "onboardCerts").
+					put(LogMessage.MESSAGE, String.format("[%s] - Certificates onboarded successfully.",successCount)).
+					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+					build()));
+		}	else {
+			log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+   					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+   					put(LogMessage.ACTION, "onboardCerts").
+   					put(LogMessage.MESSAGE, "No valid certificates available for onbaording").
+   					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+   					build()));
+   			
+   			return ResponseEntity.status(HttpStatus.NO_CONTENT).body("{\"errors\":[\"No certificate available for onbaording.\"]}");
+		}
+    	return ResponseEntity.status(HttpStatus.OK).body("{\"messages\":[\"ssl certificates onboard completed successfully\"]}");
+    }
+    
+   /**
+    * To check if metadata is already created for the given certificate. If yes, skip the certificate
+    * @param jsonObject
+    * @param token
+    * @return
+    */
+    private boolean isCertAvailableInMetadata(JsonObject jsonObject, String token) {
+    
+    boolean isMetadataAvailable = true;
+    String endPoint = jsonObject.get("commonname").getAsString();
+	String metaDataPath = (jsonObject.get("certType").getAsString().equalsIgnoreCase("internal"))?
+            SSLCertificateConstants.SSL_CERT_PATH + "/" + endPoint :SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH + "/" + endPoint;
+	Response response = new Response();
+	try {		
+			response = reqProcessor.process("/read", "{\"path\":\"" + metaDataPath + "\"}", token);		
+	} catch (Exception e) {
+		log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+				.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
+				.put(LogMessage.ACTION, "isCertAvailableInMetadata")
+				.put(LogMessage.MESSAGE, String.format("\"[%s]  - Skipping Onboard flow -  Error occured while checking certificate "
+						+ "is available in metadata.Exception = [%s] =  Message [%s]", 
+						endPoint,Arrays.toString(e.getStackTrace()), response.getResponse()))
+				.build()));
+		 isMetadataAvailable = false;
+	}
+	if (!HttpStatus.OK.equals(response.getHttpstatus())) {
+		log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+					put(LogMessage.ACTION, "isCertAvailableInMetadata").
+					put(LogMessage.MESSAGE, String.format("[%s] - Metadata is not available.",endPoint)).
+					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+					build()));
+		isMetadataAvailable = false;
+	}else if (HttpStatus.OK.equals(response.getHttpstatus())) {
+		log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+				put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+				put(LogMessage.ACTION, "isCertAvailableInMetadata").
+				put(LogMessage.MESSAGE, String.format("[%s]  - Skipping Onboard flow -  Certificate already available in metadata. ",endPoint)).
+				put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+				build()));
+	}
+	return isMetadataAvailable;
+    } 
+    
+    /**
+     * Method to get certificate details from pacbot
+     * @param bearerToken
+     * @return
+     */
+    private  JsonArray getActiveCertificaesFromPacbot(String bearerToken,Integer from, Integer size) {
+    	JsonArray responseArray;
+    	JsonArray validCertArray = new JsonArray();
+    	JsonParser jsonParser = new JsonParser();
+    	String certManagerAPI = pacbotGetCertEndpoint;
+    	PacbotCertRequest pacbotCertRequest = new PacbotCertRequest();
+    	FilterDetails filterObj = new FilterDetails();
+    	
+    	HttpClient httpClient;
+        try {
+            httpClient = HttpClientBuilder.create().setSSLHostnameVerifier(
+                    NoopHostnameVerifier.INSTANCE).
+                    setSSLContext(
+                            new SSLContextBuilder().loadTrustMaterial(null,new TrustStrategy() {
+                                @Override
+                                public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                                    return true;
+                                }
+                            }).build()
+                    ).setRedirectStrategy(new LaxRedirectStrategy()).build();
+        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e1) {
+            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "getActiveCertificaesFromPacbot").
+                    put(LogMessage.MESSAGE, "Failed to get certificates. Failed to create httpClient").
+                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                    build()));
+            return null;
+        }
+		try {
+			HttpPost postRequest = new HttpPost(certManagerAPI);
+		        postRequest.addHeader("Authorization", "Bearer "+ bearerToken);
+		        postRequest.addHeader("Content-type", "application/json");
+		        postRequest.addHeader("Accept","application/json");
+		        		        
+		        ObjectMapper obj = new ObjectMapper(); 
+		        pacbotCertRequest.setAg("aws-all");
+		        filterObj.setResourceType("cert");
+		        pacbotCertRequest.setFilterDetails(filterObj);
+		        pacbotCertRequest.setFrom(from==null?0:from);
+		        pacbotCertRequest.setSize(size==null?0:size);
+		        String json = obj.writeValueAsString(pacbotCertRequest);
+		        json = json.replaceAll("filterDetails","filter");
+
+		        
+		        
+		        StringEntity entity = new StringEntity(json);
+		        postRequest.setEntity(entity);		        
+		        HttpResponse apiResponse = httpClient.execute(postRequest);
+
+	            if ((!ObjectUtils.isEmpty(apiResponse)) && apiResponse.getStatusLine().getStatusCode() != 200) {
+	            	log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	        				put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	        				put(LogMessage.ACTION, "getActiveCertificaesFromPacbot").
+	        				put(LogMessage.MESSAGE,"Failed to get certificate list from pacbot.").
+	        				put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+	        				build()));
+	                return null;
+	            }
+	            else {
+	            String responseStr =  EntityUtils.toString(apiResponse.getEntity());
+	            if(!StringUtils.isEmpty(responseStr)) {
+	            JsonObject res = jsonParser.parse(responseStr).getAsJsonObject();
+	            responseArray= res.getAsJsonObject("data").getAsJsonArray("response");
+	            validCertArray = getValidcertificateDetails(responseArray);
+	            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	    				put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	    				put(LogMessage.ACTION, "getActiveCertificaesFromPacbot").
+	    				put(LogMessage.MESSAGE,String.format("Fetching [%s] certificates list from pacbot completed. List contains [%s] valid certificates",
+	    						responseArray.size(),validCertArray.size())).
+	    				put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+	    				build()));
+	            }}
+		
+		} catch (Exception e) {
+			log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "getActiveCertificaesFromPacbot").
+                    put(LogMessage.MESSAGE, "Failed to get certificate list from pacbot.").
+                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                    build()));
+            return null;
+		}
+		return validCertArray;
+    }
+    
+    /**
+     * Method to filter out the invalid certificates
+     * @param certArray
+     * @return
+     */
+    private JsonArray getValidcertificateDetails(JsonArray certArray) {
+    	 JsonObject jsonObject;
+    	 JsonArray validCertArray = new JsonArray();
+         for (int i = 0; i < certArray.size(); i++) {
+             jsonObject = certArray.get(i).getAsJsonObject();
+             if(jsonObject.get("certificateStatus").getAsString().equalsIgnoreCase("Active") &&
+//            		 (!(jsonObject.get("commonname").getAsString().toUpperCase().startsWith("CERTTEST"))) &&
+            		 !(jsonObject.get("commonname").getAsString().startsWith("*")) &&
+            		 ((!StringUtils.isEmpty(jsonObject.get("containerName"))) && (jsonObject.get("containerName").getAsString().equalsIgnoreCase(container_name)) )) {
+            	 validCertArray.add(certArray.get(i));
+             }
+         }
+         return validCertArray;
+    }
+    
+       
+    private ResponseEntity<String> createObjectAndOnboardCert(JsonObject certObject,UserDetails userDetails) {
+    	ResponseEntity<String> response;
+    	SSLCertificateRequest sslCertificateRequest = new SSLCertificateRequest();		    	
+    	String certificateName = ObjectUtils.isEmpty(certObject.get("commonname"))?"":certObject.get("commonname").getAsString();
+    	String containerPath = ObjectUtils.isEmpty(certObject.get("containerPath"))?"":certObject.get("containerPath").getAsString();
+    	int containerId = getContainerIdForOnboard(containerPath);
+    	
+    	 log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                 put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                 put(LogMessage.ACTION, "onboardCertificate").
+                 put(LogMessage.MESSAGE, String.format("[%s] Onbaord certificate - STARTED ", certificateName)).
+                 put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                 build()));		    	 
+    	if(container_name.equalsIgnoreCase("T-Vault-Test")) {
+    		certObject.addProperty("app.ou",certObject.get("app.ou")==null?"tvt":certObject.get("app.ou").getAsString());
+    	}
+    	 String appNameStr = certObject.get("app.ou")==null?"":certObject.get("app.ou").getAsString();
+    	 if(!StringUtils.isEmpty(appNameStr)) {
+    	 String[] appNames = Arrays.stream(appNameStr.split(","))
+ 		        .map(String::trim)
+ 		        .toArray(String[]::new);
+    	 sslCertificateRequest.setAppName(appNames[0]);   	 
+    	 }
+    	 String tagsOwner = certObject.get("tags.Owner")==null?"":certObject.get("tags.Owner").getAsString();
+    	sslCertificateRequest.setCertificateName(certificateName);
+    	sslCertificateRequest.setCertType(ObjectUtils.isEmpty(certObject.get("certType"))?"":certObject.get("certType").getAsString().toLowerCase());		    	
+    	response = onboardCertificate(sslCertificateRequest,userDetails,containerId,tagsOwner,"");
+    	return response;
+    }
+    
+    
+    /**
+     * Method to Create policies and metadata for the given certificate
+     * @param certObject
+     */
+    public ResponseEntity<String> onboardCertificate(SSLCertificateRequest sslCertificateRequest,UserDetails userDetails, int containerId, String tagsOwner, String leadEmail) {
+    	
+    	if(StringUtils.isEmpty(sslCertificateRequest.getAppName())) {
+    		log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+ 					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+ 					put(LogMessage.ACTION, "onboardCertificate").
+ 					put(LogMessage.MESSAGE, String.format("[%s] - Certificate onboard Failed. Application Name is not available. ", sslCertificateRequest.getCertificateName())).
+ 					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+ 					build()));
+    		 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    					.body("{\"errors\":[\"" + "Application name unavailable. " + "\"]}");
+    	}
+    	
+    	try {
+    		ResponseEntity<String> metadataResponse = createCertMetadataAndPolicy(sslCertificateRequest,userDetails,containerId, tagsOwner, leadEmail);
+    		if(!HttpStatus.OK.equals(metadataResponse.getStatusCode())){
+    			log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+    					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+    					put(LogMessage.ACTION, "onboardCertificate").
+    					put(LogMessage.MESSAGE, String.format("[%s] - Certficate metadata creation failed.  ", sslCertificateRequest.getCertificateName())).
+    					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+    					build()));
+    			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+    					.body("{\"errors\":[\"" + "Certficate metadata creation failed. " + "\"]}");
+    		}
+    		else if(HttpStatus.OK.equals(metadataResponse.getStatusCode())) {
+    			log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+    					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+    					put(LogMessage.ACTION, "onboardCertificate").
+    					put(LogMessage.MESSAGE, String.format("[%s] - Certficate onboarding is successfully - completed.  ", sslCertificateRequest.getCertificateName())).
+    					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+    					build()));
+    			
+    		}
+		} catch (Exception tex) {
+			log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString()).
+                    put(LogMessage.ACTION, String.format(" Onboardcertificate " +
+                                    "Exception = [%s] =  Message [%s] = certificate name = [%s]",
+                            Arrays.toString(tex.getStackTrace()), tex.getMessage(),sslCertificateRequest.getCertificateName())).build()));
+			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+					.body("{\"errors\":[\"" + "Certificate onboard failed. " + "\"]}");
+		}
+    	return ResponseEntity.status(HttpStatus.OK)
+				.body("{\"messages\":[\"" + "Certficate onboarding is successfully completed. " + "\"]}");
+    }
+    
+    
+    /**
+     * This Method used to get the container id
+     * @param sslCertificateRequest
+     * @return
+     */
+    private int getContainerIdForOnboard(String containerPath){
+        int containerId=0;
+        if(!StringUtils.isEmpty(containerPath)) {
+        	
+        String[] splittedStr = Arrays.stream(containerPath.split(">"))
+        .map(String::trim)
+        .toArray(String[]::new);
+        int size = splittedStr.length;
+        if(splittedStr[size-1].equals("Private Certificates")) {
+        	containerId =getTargetSystemGroupIdForDev(SSLCertType.valueOf("PRIVATE_SINGLE_SAN"));
+        }
+        else if(splittedStr[size-2].equals("Entrust Single SAN")) {
+        	containerId =getTargetSystemGroupIdForDev(SSLCertType.valueOf("PUBLIC_SINGLE_SAN"));
+        }
+        else if(splittedStr[size-2].equals("Entrust Multiple SANs")) {
+        	containerId =getTargetSystemGroupIdForDev(SSLCertType.valueOf("PUBLIC_MULTI_SAN"));
+        }
+        }
+        return containerId;
+    }
+    		   
+    
+    /**
+     * Method to create the metadata and policy for a certificate
+     * @param sslCertificateRequest
+     * @param userDetails
+     * @param containerId
+     * @return
+     */
+    private ResponseEntity<String> createCertMetadataAndPolicy(SSLCertificateRequest sslCertificateRequest, UserDetails userDetails, int containerId, String tagsOwner, String leadEmail) {
+    	
+    	// Policy Creation
+		boolean isPoliciesCreated = false;
+		CertResponse enrollResponse = new CertResponse();
+		ResponseEntity<String> permissionResponse ;
+		
+		boolean isDeleted =false;
+		try {
+			String metadataJson = populateSSLCertificateMetadataForOnboard(sslCertificateRequest, userDetails,containerId, tagsOwner, leadEmail);
+			if(metadataJson == null) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[\"Certificate onboard failed.\"]}");
 			}
-			return isMetadataAvailable;
-		    } 
-		    
-		    /**
-		     * Method to get certificate details from pacbot
-		     * @param bearerToken
-		     * @return
-		     */
-		    private  JsonArray getActiveCertificaesFromPacbot(String bearerToken,Integer from, Integer size) {
-		    	JsonArray responseArray;
-		    	JsonArray validCertArray = new JsonArray();
-		    	JsonParser jsonParser = new JsonParser();
-		    	String certManagerAPI = pacbotGetCertEndpoint;
-		    	PacbotCertRequest pacbotCertRequest = new PacbotCertRequest();
-		    	FilterDetails filterObj = new FilterDetails();
-		    	
-		    	HttpClient httpClient;
-		        try {
-		            httpClient = HttpClientBuilder.create().setSSLHostnameVerifier(
-		                    NoopHostnameVerifier.INSTANCE).
-		                    setSSLContext(
-		                            new SSLContextBuilder().loadTrustMaterial(null,new TrustStrategy() {
-		                                @Override
-		                                public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-		                                    return true;
-		                                }
-		                            }).build()
-		                    ).setRedirectStrategy(new LaxRedirectStrategy()).build();
-		        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e1) {
-		            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                    put(LogMessage.ACTION, "getActiveCertificaesFromPacbot").
-		                    put(LogMessage.MESSAGE, "Failed to get certificates. Failed to create httpClient").
-		                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		                    build()));
-		            return null;
-		        }
-				try {
-					HttpPost postRequest = new HttpPost(certManagerAPI);
-				        postRequest.addHeader("Authorization", "Bearer "+ bearerToken);
-				        postRequest.addHeader("Content-type", "application/json");
-				        postRequest.addHeader("Accept","application/json");
-				        		        
-				        ObjectMapper obj = new ObjectMapper(); 
-				        pacbotCertRequest.setAg("aws-all");
-				        filterObj.setResourceType("cert");
-				        pacbotCertRequest.setFilterDetails(filterObj);
-				        pacbotCertRequest.setFrom(from==null?0:from);
-				        pacbotCertRequest.setSize(size==null?0:size);
-				        String json = obj.writeValueAsString(pacbotCertRequest);
-				        json = json.replaceAll("filterDetails","filter");
 
-				        
-				        
-				        StringEntity entity = new StringEntity(json);
-				        postRequest.setEntity(entity);		        
-				        HttpResponse apiResponse = httpClient.execute(postRequest);
+			boolean sslMetaDataCreationStatus;
 
-			            if ((!ObjectUtils.isEmpty(apiResponse)) && apiResponse.getStatusLine().getStatusCode() != 200) {
-			            	log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-			        				put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-			        				put(LogMessage.ACTION, "getActiveCertificaesFromPacbot").
-			        				put(LogMessage.MESSAGE,"Failed to get certificate list from pacbot.").
-			        				put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-			        				build()));
-			                return null;
-			            }
-			            else {
-			            String responseStr =  EntityUtils.toString(apiResponse.getEntity());
-			            if(!StringUtils.isEmpty(responseStr)) {
-			            JsonObject res = jsonParser.parse(responseStr).getAsJsonObject();
-			            responseArray= res.getAsJsonObject("data").getAsJsonArray("response");
-			            validCertArray = getValidcertificateDetails(responseArray);
-			            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-			    				put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-			    				put(LogMessage.ACTION, "getActiveCertificaesFromPacbot").
-			    				put(LogMessage.MESSAGE,String.format("Fetching [%s] certificates list from pacbot completed. List contains [%s] valid certificates",
-			    						responseArray.size(),validCertArray.size())).
-			    				put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-			    				build()));
-			            }}
-				
-				} catch (Exception e) {
-					log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                    put(LogMessage.ACTION, "getActiveCertificaesFromPacbot").
-		                    put(LogMessage.MESSAGE, "Failed to get certificate list from pacbot.").
-		                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		                    build()));
-		            return null;
-				}
-				return validCertArray;
-		    }
-		    
-		    /**
-		     * Method to filter out the invalid certificates
-		     * @param certArray
-		     * @return
-		     */
-		    private JsonArray getValidcertificateDetails(JsonArray certArray) {
-		    	 JsonObject jsonObject;
-		    	 JsonArray validCertArray = new JsonArray();
-		         for (int i = 0; i < certArray.size(); i++) {
-		             jsonObject = certArray.get(i).getAsJsonObject();
-		             if(jsonObject.get("certificateStatus").getAsString().equalsIgnoreCase("Active") &&
-//		            		 (!(jsonObject.get("commonname").getAsString().toUpperCase().startsWith("CERTTEST"))) &&
-		            		 !(jsonObject.get("commonname").getAsString().startsWith("*")) &&
-		            		 ((!StringUtils.isEmpty(jsonObject.get("containerName"))) && (jsonObject.get("containerName").getAsString().equalsIgnoreCase(container_name)) )) {
-		            	 validCertArray.add(certArray.get(i));
-		             }
-		         }
-		         return validCertArray;
-		    }
-		    
-		       
-		    private ResponseEntity<String> createObjectAndOnboardCert(JsonObject certObject,UserDetails userDetails) {
-		    	ResponseEntity<String> response;
-		    	SSLCertificateRequest sslCertificateRequest = new SSLCertificateRequest();		    	
-		    	String certificateName = ObjectUtils.isEmpty(certObject.get("commonname"))?"":certObject.get("commonname").getAsString();
-		    	String containerPath = ObjectUtils.isEmpty(certObject.get("containerPath"))?"":certObject.get("containerPath").getAsString();
-		    	int containerId = getContainerIdForOnboard(containerPath);
-		    	
-		    	 log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                 put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                 put(LogMessage.ACTION, "onboardCertificate").
-		                 put(LogMessage.MESSAGE, String.format("[%s] Onbaord certificate - STARTED ", certificateName)).
-		                 put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		                 build()));		    	 
-		    	if(container_name.equalsIgnoreCase("T-Vault-Test")) {
-		    		certObject.addProperty("app.ou",certObject.get("app.ou")==null?"tvt":certObject.get("app.ou").getAsString());
-		    	}
-		    	 String appNameStr = certObject.get("app.ou")==null?"":certObject.get("app.ou").getAsString();
-		    	 if(!StringUtils.isEmpty(appNameStr)) {
-		    	 String[] appNames = Arrays.stream(appNameStr.split(","))
-		 		        .map(String::trim)
-		 		        .toArray(String[]::new);
-		    	 sslCertificateRequest.setAppName(appNames[0]);   	 
-		    	 }
-		    	 String tagsOwner = certObject.get("tags.Owner")==null?"":certObject.get("tags.Owner").getAsString();
-		    	sslCertificateRequest.setCertificateName(certificateName);
-		    	sslCertificateRequest.setCertType(ObjectUtils.isEmpty(certObject.get("certType"))?"":certObject.get("certType").getAsString().toLowerCase());		    	
-		    	response = onboardCertificate(sslCertificateRequest,userDetails,containerId,tagsOwner);
-		    	return response;
-		    }
-		    
-		    
-		    /**
-		     * Method to Create policies and metadata for the given certificate
-		     * @param certObject
-		     */
-		    public ResponseEntity<String> onboardCertificate(SSLCertificateRequest sslCertificateRequest,UserDetails userDetails, int containerId, String tagsOwner) {
-		    	
-		    	if(StringUtils.isEmpty(sslCertificateRequest.getAppName())) {
-		    		log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		 					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		 					put(LogMessage.ACTION, "onboardCertificate").
-		 					put(LogMessage.MESSAGE, String.format("[%s] - Certificate onboard Failed. Application Name is not available. ", sslCertificateRequest.getCertificateName())).
-		 					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		 					build()));
-		    		 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-		    					.body("{\"errors\":[\"" + "Application name unavailable. " + "\"]}");
-		    	}
-		    	
-		    	try {
-		    		ResponseEntity<String> metadataResponse = createCertMetadataAndPolicy(sslCertificateRequest,userDetails,containerId, tagsOwner);
-		    		if(!HttpStatus.OK.equals(metadataResponse.getStatusCode())){
-		    			log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		    					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		    					put(LogMessage.ACTION, "onboardCertificate").
-		    					put(LogMessage.MESSAGE, String.format("[%s] - Certficate metadata creation failed.  ", sslCertificateRequest.getCertificateName())).
-		    					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		    					build()));
-		    			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-		    					.body("{\"errors\":[\"" + "Certficate metadata creation failed. " + "\"]}");
-		    		}
-		    		else if(HttpStatus.OK.equals(metadataResponse.getStatusCode())) {
-		    			log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		    					put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		    					put(LogMessage.ACTION, "onboardCertificate").
-		    					put(LogMessage.MESSAGE, String.format("[%s] - Certficate onboarding is successfully - completed.  ", sslCertificateRequest.getCertificateName())).
-		    					put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		    					build()));
-		    			
-		    		}
-				} catch (Exception tex) {
-					log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString()).
-		                    put(LogMessage.ACTION, String.format(" Onboardcertificate " +
-		                                    "Exception = [%s] =  Message [%s] = certificate name = [%s]",
-		                            Arrays.toString(tex.getStackTrace()), tex.getMessage(),sslCertificateRequest.getCertificateName())).build()));
-					return ResponseEntity.status(HttpStatus.FORBIDDEN)
-							.body("{\"errors\":[\"" + "Certificate onboard failed. " + "\"]}");
-				}
-		    	return ResponseEntity.status(HttpStatus.OK)
-						.body("{\"messages\":[\"" + "Certficate onboarding is successfully completed. " + "\"]}");
-		    }
-		    
-		    
-		    /**
-		     * This Method used to get the container id
-		     * @param sslCertificateRequest
-		     * @return
-		     */
-		    private int getContainerIdForOnboard(String containerPath){
-		        int containerId=0;
-		        if(!StringUtils.isEmpty(containerPath)) {
-		        	
-		        String[] splittedStr = Arrays.stream(containerPath.split(">"))
-		        .map(String::trim)
-		        .toArray(String[]::new);
-		        int size = splittedStr.length;
-		        if(splittedStr[size-1].equals("Private Certificates")) {
-		        	containerId =getTargetSystemGroupIdForDev(SSLCertType.valueOf("PRIVATE_SINGLE_SAN"));
-		        }
-		        else if(splittedStr[size-2].equals("Entrust Single SAN")) {
-		        	containerId =getTargetSystemGroupIdForDev(SSLCertType.valueOf("PUBLIC_SINGLE_SAN"));
-		        }
-		        else if(splittedStr[size-2].equals("Entrust Multiple SANs")) {
-		        	containerId =getTargetSystemGroupIdForDev(SSLCertType.valueOf("PUBLIC_MULTI_SAN"));
-		        }
-		        }
-		        return containerId;
-		    }
-		    		   
-		    
-		    /**
-		     * Method to create the metadata and policy for a certificate
-		     * @param sslCertificateRequest
-		     * @param userDetails
-		     * @param containerId
-		     * @return
-		     */
-		    private ResponseEntity<String> createCertMetadataAndPolicy(SSLCertificateRequest sslCertificateRequest, UserDetails userDetails, int containerId, String tagsOwner) {
-		    	
-		    	// Policy Creation
-				boolean isPoliciesCreated = false;
-				CertResponse enrollResponse = new CertResponse();
-				ResponseEntity<String> permissionResponse ;
-				
-				boolean isDeleted =false;
-				try {
-					String metadataJson = populateSSLCertificateMetadataForOnboard(sslCertificateRequest, userDetails,containerId, tagsOwner);
-					if(metadataJson == null) {
-						return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[\"Certificate onboard failed.\"]}");
+			sslMetaDataCreationStatus = ControllerUtil.createMetadata(metadataJson,tokenUtils.getSelfServiceToken());
+
+			 log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString()).
+	                    put(LogMessage.ACTION, String.format(" [%s] - Metadata creation status - [%s] for metadatajson - [%s]",
+	                            sslCertificateRequest.getCertificateName(),sslMetaDataCreationStatus,metadataJson)).
+	                    build()));
+
+			 JsonParser jsonParser = new JsonParser();
+		        JsonObject object = ((JsonObject) jsonParser.parse(metadataJson)).getAsJsonObject("data");
+				if(object.get("certType").getAsString().equalsIgnoreCase("external")) {
+
+					String metaDataPath = (sslCertificateRequest.getCertType().equalsIgnoreCase("internal")) ? SSLCertificateConstants.SSL_CERT_PATH
+							: SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH;
+					String certificatePath = metaDataPath + '/' + sslCertificateRequest.getCertificateName();
+					SSLCertificateMetadataDetails certificateMetaData = certificateUtils.getCertificateMetaData(tokenUtils.getSelfServiceToken(),
+							sslCertificateRequest.getCertificateName(), sslCertificateRequest.getCertType());
+
+					String nclmAccessToken = getNclmToken();
+					if (StringUtils.isEmpty(nclmAccessToken)) {
+						return null;
 					}
+					CertificateData certificateData = getLatestCertificateFromNCLM(sslCertificateRequest.getCertificateName(), nclmAccessToken, containerId);
 
-					boolean sslMetaDataCreationStatus;
+					if(!ObjectUtils.isEmpty(certificateData)) {
+						 processCertificateDataAndUpdateMetadata(certificatePath, tokenUtils.getSelfServiceToken(), certificateMetaData,
+								certificateData);
+				}
+				}
 
-					sslMetaDataCreationStatus = ControllerUtil.createMetadata(metadataJson,tokenUtils.getSelfServiceToken());
-
-					 log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-			                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString()).
-			                    put(LogMessage.ACTION, String.format(" [%s] - Metadata creation status - [%s] for metadatajson - [%s]",
-			                            sslCertificateRequest.getCertificateName(),sslMetaDataCreationStatus,metadataJson)).
-			                    build()));
-
-					 JsonParser jsonParser = new JsonParser();
-				        JsonObject object = ((JsonObject) jsonParser.parse(metadataJson)).getAsJsonObject("data");
-						if(object.get("certType").getAsString().equalsIgnoreCase("external")) {
-
-							String metaDataPath = (sslCertificateRequest.getCertType().equalsIgnoreCase("internal")) ? SSLCertificateConstants.SSL_CERT_PATH
-									: SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH;
-							String certificatePath = metaDataPath + '/' + sslCertificateRequest.getCertificateName();
-							SSLCertificateMetadataDetails certificateMetaData = certificateUtils.getCertificateMetaData(tokenUtils.getSelfServiceToken(),
-									sslCertificateRequest.getCertificateName(), sslCertificateRequest.getCertType());
-							String nclmAccessToken = getNclmToken();
-							if (StringUtils.isEmpty(nclmAccessToken)) {
-								return null;
-							}
-							CertificateData certificateData = getLatestCertificateFromNCLM(sslCertificateRequest.getCertificateName(), nclmAccessToken, containerId);
-
-							if(!ObjectUtils.isEmpty(certificateData)) {
-								 processCertificateDataAndUpdateMetadata(certificatePath, tokenUtils.getSelfServiceToken(), certificateMetaData,
-										certificateData);
-						}
-						}
-
-		        if (sslMetaDataCreationStatus) {
-		            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString()).
-		                    put(LogMessage.ACTION, String.format(" [%s] - Metadata Creation - Completed ",
-		                            sslCertificateRequest.getCertificateName())).
-		                    build()));
-		            isPoliciesCreated = createPolicies(sslCertificateRequest, tokenUtils.getSelfServiceToken());
-		        }
+        if (sslMetaDataCreationStatus) {
+            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString()).
+                    put(LogMessage.ACTION, String.format(" [%s] - Metadata Creation - Completed ",
+                            sslCertificateRequest.getCertificateName())).
+                    build()));
+            isPoliciesCreated = createPolicies(sslCertificateRequest, tokenUtils.getSelfServiceToken());
+        }
 
 
-		        if(isPoliciesCreated) {
-		            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString()).
-		                    put(LogMessage.ACTION, String.format(" [%s] - Policycreation - Completed",
-		                            sslCertificateRequest.getCertificateName())).
-		                    build()));
-		        }
-		        else {
-		        	log.error(JSONUtil.getJSON(ImmutableMap.<String, String> builder()
-							.put(LogMessage.USER,
-									ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
-							.put(LogMessage.ACTION,
-									String.format(
-											" ERROR [%s] - Onboard failed. Policy creation failed . policyStatus[%s]",
-											sslCertificateRequest.getCertificateName(), isPoliciesCreated))	.build()));
-		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"errors\":[\""+enrollResponse.getResponse()+"\"]}");
-		        }
+        if(isPoliciesCreated) {
+            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString()).
+                    put(LogMessage.ACTION, String.format(" [%s] - Policycreation - Completed",
+                            sslCertificateRequest.getCertificateName())).
+                    build()));
+        }
+        else {
+        	log.error(JSONUtil.getJSON(ImmutableMap.<String, String> builder()
+					.put(LogMessage.USER,
+							ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
+					.put(LogMessage.ACTION,
+							String.format(
+									" ERROR [%s] - Onboard failed. Policy creation failed . policyStatus[%s]",
+									sslCertificateRequest.getCertificateName(), isPoliciesCreated))	.build()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"errors\":[\""+enrollResponse.getResponse()+"\"]}");
+        }
 
 
-		        //Send failed certificate response in case of any issues in Policy/Meta data creation
-		        if ((!isPoliciesCreated) || (!sslMetaDataCreationStatus)) {
-		            enrollResponse.setResponse("Metadatacreation failed");
-		            enrollResponse.setSuccess(Boolean.FALSE);
-					log.error(JSONUtil.getJSON(ImmutableMap.<String, String> builder()
-							.put(LogMessage.USER,
-									ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
-							.put(LogMessage.ACTION,
-									String.format(
-											"ERROR [%s] - Onboard failed. Metadata creation failed - metaDataStatus[%s] - policyStatus[%s]",
-											sslCertificateRequest.getCertificateName(), sslMetaDataCreationStatus,
-											isPoliciesCreated))
-							.build()));
-		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"errors\":[\""+enrollResponse.getResponse()+"\"]}");
-		        } else {		        	
-		            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+        //Send failed certificate response in case of any issues in Policy/Meta data creation
+        if ((!isPoliciesCreated) || (!sslMetaDataCreationStatus)) {
+            enrollResponse.setResponse("Metadatacreation failed");
+            enrollResponse.setSuccess(Boolean.FALSE);
+			log.error(JSONUtil.getJSON(ImmutableMap.<String, String> builder()
+					.put(LogMessage.USER,
+							ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
+					.put(LogMessage.ACTION,
+							String.format(
+									"ERROR [%s] - Onboard failed. Metadata creation failed - metaDataStatus[%s] - policyStatus[%s]",
+									sslCertificateRequest.getCertificateName(), sslMetaDataCreationStatus,
+									isPoliciesCreated))
+					.build()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"errors\":[\""+enrollResponse.getResponse()+"\"]}");
+        } else {		        	
+            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "generateSSLCertificate").
+                    put(LogMessage.MESSAGE, "Sudo Policy Creation – Started  ").
+                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                    build()));
+            permissionResponse =  addSudoPermissionToCertificateOwner(sslCertificateRequest, userDetails, enrollResponse
+                    , isPoliciesCreated, sslMetaDataCreationStatus,tokenUtils.getSelfServiceToken(),"onboard");
+            if (permissionResponse !=null && !(HttpStatus.OK.equals(permissionResponse.getStatusCode()))) {
+            	log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	                    put(LogMessage.ACTION, "generateSSLCertificate").
+	                    put(LogMessage.MESSAGE, String.format(" [%s] - ERROR - Sudo Policy Creation – Failed  ",sslCertificateRequest.getCertificateName())).
+	                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+	                    build()));
+            	SSLCertificateMetadataDetails certificateMetaData = certificateUtils.getCertificateMetaData(tokenUtils.getSelfServiceToken(),
+            			sslCertificateRequest.getCertificateName(), sslCertificateRequest.getCertType());
+        		String metaDataPath = (sslCertificateRequest.getCertType().equalsIgnoreCase("internal")) ? SSLCertificateConstants.SSL_CERT_PATH
+        				: SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH;
+        		String certificatePath = metaDataPath + '/' + sslCertificateRequest.getCertificateName();
+        		isDeleted = deleteMetaDataAndPermissions(certificateMetaData, certificatePath, tokenUtils.getSelfServiceToken());
+        		if(isDeleted) {
+        			log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
 		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
 		                    put(LogMessage.ACTION, "generateSSLCertificate").
-		                    put(LogMessage.MESSAGE, "Sudo Policy Creation – Started  ").
+		                    put(LogMessage.MESSAGE, String.format(" [%s] - ERROR - Metadata and policy deletion – Completed  ",sslCertificateRequest.getCertificateName())).
 		                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
 		                    build()));
-		            permissionResponse =  addSudoPermissionToCertificateOwner(sslCertificateRequest, userDetails, enrollResponse
-		                    , isPoliciesCreated, sslMetaDataCreationStatus,tokenUtils.getSelfServiceToken(),"onboard");
-		            if (permissionResponse !=null && !(HttpStatus.OK.equals(permissionResponse.getStatusCode()))) {
-		            	log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-			                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-			                    put(LogMessage.ACTION, "generateSSLCertificate").
-			                    put(LogMessage.MESSAGE, String.format(" [%s] - ERROR - Sudo Policy Creation – Failed  ",sslCertificateRequest.getCertificateName())).
-			                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-			                    build()));
-		            	SSLCertificateMetadataDetails certificateMetaData = certificateUtils.getCertificateMetaData(tokenUtils.getSelfServiceToken(),
-		            			sslCertificateRequest.getCertificateName(), sslCertificateRequest.getCertType());
-		        		String metaDataPath = (sslCertificateRequest.getCertType().equalsIgnoreCase("internal")) ? SSLCertificateConstants.SSL_CERT_PATH
-		        				: SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH;
-		        		String certificatePath = metaDataPath + '/' + sslCertificateRequest.getCertificateName();
-		        		isDeleted = deleteMetaDataAndPermissions(certificateMetaData, certificatePath, tokenUtils.getSelfServiceToken());
-		        		if(isDeleted) {
-		        			log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-				                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-				                    put(LogMessage.ACTION, "generateSSLCertificate").
-				                    put(LogMessage.MESSAGE, String.format(" [%s] - ERROR - Metadata and policy deletion – Completed  ",sslCertificateRequest.getCertificateName())).
-				                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-				                    build()));
-		        		}
-		            }
-		            return permissionResponse;
-		        }
-		    	} catch (Exception e) {
-		    		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"errors\":[\""+enrollResponse.getResponse()+"\"]}");
-				}
-		    }
-		    
-		    
-		    
-		    /**
-			 * Method to populate certificate metadata details
-			 * @param sslCertificateRequest
-			 * @param userDetails
-			 * @param certManagerLogin
-			 * @return
-			 * @throws Exception
-			 */
-			private String populateSSLCertificateMetadataForOnboard(SSLCertificateRequest sslCertificateRequest, UserDetails userDetails, int containerId, String tagsOwner) throws Exception {
-				
-				String metaDataPath = (sslCertificateRequest.getCertType().equalsIgnoreCase("internal"))?
-			            SSLCertificateConstants.SSL_CERT_PATH :SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH;
-			    String projectLeadEmail = "";
-			    String certOwnerNtId = "";
-			    String displayName = "";
-			    String certMetadataPath = metaDataPath + '/' + sslCertificateRequest.getCertificateName();		
+        		}
+            }
+            return permissionResponse;
+        }
+    	} catch (Exception e) {
+    		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"errors\":[\""+enrollResponse.getResponse()+"\"]}");
+		}
+    }
+    
+    
+    
+    /**
+	 * Method to populate certificate metadata details
+	 * @param sslCertificateRequest
+	 * @param userDetails
+	 * @param certManagerLogin
+	 * @return
+	 * @throws Exception
+	 */
+	private String populateSSLCertificateMetadataForOnboard(SSLCertificateRequest sslCertificateRequest, UserDetails userDetails, int containerId, String tagsOwner, String leadEmail) throws Exception {
+		
+		String metaDataPath = (sslCertificateRequest.getCertType().equalsIgnoreCase("internal"))?
+	            SSLCertificateConstants.SSL_CERT_PATH :SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH;
+	    String projectLeadEmail = "";
+	    String certOwnerNtId = "";
+	    String displayName = "";
+	    String certMetadataPath = metaDataPath + '/' + sslCertificateRequest.getCertificateName();		
 
-		        SSLCertificateMetadataDetails sslCertificateMetadataDetails = new SSLCertificateMetadataDetails();
+        SSLCertificateMetadataDetails sslCertificateMetadataDetails = new SSLCertificateMetadataDetails();
 
-		        //Get Application details
-		        String applicationName = sslCertificateRequest.getAppName();
-		        if(StringUtils.isEmpty(applicationName)) {
-		        	log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                    put(LogMessage.ACTION, "populateSSLCertificateMetadataForOnboard ").
-		                    put(LogMessage.MESSAGE, String.format("ERROR -[%s]- Application Name is not available in the certificate details. ",
-		                    		sslCertificateRequest.getCertificateName())).
-		                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		                    build()));
-		        }else {        	
-		        ResponseEntity<String> appResponse = workloadDetailsService.getWorkloadDetailsByAppName(applicationName);
-		        if (HttpStatus.OK.equals(appResponse.getStatusCode())) {
-		            JsonParser jsonParser = new JsonParser();
-		            JsonObject response = (JsonObject) jsonParser.parse(appResponse.getBody());
-		        JsonObject jsonElement = null;
-		        if (Objects.nonNull(response)) {
-		            jsonElement = response.get("spec").getAsJsonObject();
-		            if (Objects.nonNull(jsonElement)) {
-		                String applicationTag = validateString(jsonElement.get("tag"));
-		                
-		                projectLeadEmail = validateString(jsonElement.get("projectLeadEmail"));		
-		              
-		                if(!StringUtils.isEmpty(projectLeadEmail)) {
-		   		    	 String[] projectLeadEmails = Arrays.stream(projectLeadEmail.split(","))
-		   		 		        .map(String::trim)
-		   		 		        .toArray(String[]::new);
-		   		    	sslCertificateMetadataDetails.setProjectLeadEmailId(projectLeadEmails[0]);
-		   		    	 }else {
-		   		    		log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-				                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-				                    put(LogMessage.ACTION, "populateSSLCertificateMetadataForOnboard").
-				                    put(LogMessage.MESSAGE, String.format("Project lead email id is not available for given " +
-				                            "certificate = [%s]", sslCertificateRequest.getCertificateName())).
-				                    build()));
-				            return null;
-		   		    	 }
-		                
-		                String appOwnerEmail = validateString(jsonElement.get("brtContactEmail"));
-		                String akmid = validateString(jsonElement.get("akmid"));
-		                log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                        put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                        put(LogMessage.ACTION,"Populate Application details in SSL Certificate Metadata").
-		                        put(LogMessage.MESSAGE, String.format("Application Details  for an " +
-		                                        "applicationName = [%s] , applicationTag = [%s], " +
-		                                        "projectLeadEmail =  [%s],appOwnerEmail =  [%s], akmid = [%s]", applicationName,
-		                                applicationTag, projectLeadEmail, appOwnerEmail, akmid)).build()));
-
-		                sslCertificateMetadataDetails.setAkmid(akmid);
-		                sslCertificateMetadataDetails.setApplicationOwnerEmailId(appOwnerEmail);
-		                sslCertificateMetadataDetails.setApplicationTag(applicationTag);
-		                sslCertificateMetadataDetails.setApplicationName(applicationName);
-		                sslCertificateMetadataDetails.setNotificationEmails(tagsOwner);
-		            }
-		            }
-		        } else {
-		            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                    put(LogMessage.ACTION, "Getting Application Details by app name during Meta data creation ").
-		                    put(LogMessage.MESSAGE, String.format("Application details will not insert/update in metadata  " +
-		                                    "for an application =  [%s] ",  applicationName)).
-		                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-		                    build()));
-		        }}
-
-		        
-		        CertificateData certDetails = null;
-		        String nclmAccessToken = getNclmToken();	
-		                
-		        //Get Certificate Details
-				if(!StringUtils.isEmpty(nclmAccessToken)) {		                 
-		            
-		            certDetails = getLatestCertificateFromNCLM(sslCertificateRequest.getCertificateName(), nclmAccessToken, containerId);
-		            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+        //Get Application details
+        String applicationName = sslCertificateRequest.getAppName();
+        if(StringUtils.isEmpty(applicationName)) {
+        	log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "populateSSLCertificateMetadataForOnboard ").
+                    put(LogMessage.MESSAGE, String.format("ERROR -[%s]- Application Name is not available in the certificate details. ",
+                    		sslCertificateRequest.getCertificateName())).
+                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                    build()));
+        }else {        	
+        ResponseEntity<String> appResponse = workloadDetailsService.getWorkloadDetailsByAppName(applicationName);
+        if (HttpStatus.OK.equals(appResponse.getStatusCode())) {
+            JsonParser jsonParser = new JsonParser();
+            JsonObject response = (JsonObject) jsonParser.parse(appResponse.getBody());
+        JsonObject jsonElement = null;
+        if (Objects.nonNull(response)) {
+            jsonElement = response.get("spec").getAsJsonObject();
+            if (Objects.nonNull(jsonElement)) {
+                String applicationTag = validateString(jsonElement.get("tag"));
+                
+                projectLeadEmail = validateString(jsonElement.get("projectLeadEmail"));		
+              
+                if(!StringUtils.isEmpty(projectLeadEmail)) {
+   		    	 String[] projectLeadEmails = Arrays.stream(projectLeadEmail.split(","))
+   		 		        .map(String::trim)
+   		 		        .toArray(String[]::new);
+   		    	sslCertificateMetadataDetails.setProjectLeadEmailId(projectLeadEmails[0]);
+   		    	 }else {
+   		    		log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
 		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
 		                    put(LogMessage.ACTION, "populateSSLCertificateMetadataForOnboard").
-		                    put(LogMessage.MESSAGE, String.format("Fetching certificate details  status = [%s]"
-		                            , Objects.nonNull(certDetails))).build()));
-		         
-		        }
-		        if (Objects.nonNull(certDetails) && certDetails.getCertificateId()>0) {
-		            sslCertificateMetadataDetails.setCertificateId(certDetails.getCertificateId());
-		            sslCertificateMetadataDetails.setCertificateName(certDetails.getCertificateName());
-		            sslCertificateMetadataDetails.setCreateDate(certDetails.getCreateDate());
-		            sslCertificateMetadataDetails.setExpiryDate(certDetails.getExpiryDate());
-		            sslCertificateMetadataDetails.setAuthority(certDetails.getAuthority());
-		            sslCertificateMetadataDetails.setCertificateStatus(certDetails.getCertificateStatus());
-		            sslCertificateMetadataDetails.setContainerName(certDetails.getContainerName());
-		            sslCertificateMetadataDetails.setDnsNames(certDetails.getDnsNames());
-		            if(!sslCertificateRequest.getCertType().equalsIgnoreCase("internal")) {
-		            	sslCertificateMetadataDetails.setCertType("external");
-		            	sslCertificateRequest.setCertType("external");
-
-		            }else {
-		            	sslCertificateMetadataDetails.setCertType(sslCertificateRequest.getCertType());
-		            	sslCertificateMetadataDetails.setDnsNames(certDetails.getDnsNames());
-		            }
-
-		        } else {
-		            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                    put(LogMessage.ACTION, "populateSSLCertificateMetadataForOnboard").
-		                    put(LogMessage.MESSAGE, String.format("Certificate Details is not available in NCLM for given " +
+		                    put(LogMessage.MESSAGE, String.format("Project lead email id is not available for given " +
 		                            "certificate = [%s]", sslCertificateRequest.getCertificateName())).
 		                    build()));
 		            return null;
-		        }
-		        
-		        ResponseEntity<DirectoryObjects> userResponse = directoryService.searchByUPN(projectLeadEmail);
-		        Object[] users = null;
-		    	DirectoryUser dirUser = new DirectoryUser();
-		    	if(userResponse.getStatusCode().equals(HttpStatus.OK)) {
-		    		 users = userResponse.getBody().getData().getValues();
-		    		 if(!ObjectUtils.isEmpty(users)) {
-		    		 dirUser = (DirectoryUser) users[0];
-		    		 certOwnerNtId = dirUser.getUserName();
-		    		 displayName = dirUser.getDisplayName();
-		    		 }
-		    	}  
-			        sslCertificateMetadataDetails.setCertCreatedBy(certOwnerNtId);
-			        sslCertificateMetadataDetails.setCertOwnerEmailId(projectLeadEmail);
-			        sslCertificateMetadataDetails.setCertOwnerNtid(certOwnerNtId);
-			        sslCertificateMetadataDetails.setContainerId(containerId);
-			        
-			        sslCertificateRequest.setCertOwnerEmailId(projectLeadEmail);
-			        sslCertificateRequest.setCertOwnerNtid(certOwnerNtId);
+   		    	 }
+                
+                String appOwnerEmail = validateString(jsonElement.get("brtContactEmail"));
+                String akmid = validateString(jsonElement.get("akmid"));
+                log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                        put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                        put(LogMessage.ACTION,"Populate Application details in SSL Certificate Metadata").
+                        put(LogMessage.MESSAGE, String.format("Application Details  for an " +
+                                        "applicationName = [%s] , applicationTag = [%s], " +
+                                        "projectLeadEmail =  [%s],appOwnerEmail =  [%s], akmid = [%s]", applicationName,
+                                applicationTag, projectLeadEmail, appOwnerEmail, akmid)).build()));
 
-		        log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-		                put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-		                put(LogMessage.ACTION, String.format("MetaData info details = [%s]", sslCertificateMetadataDetails.toString())).
-		                build()));     
+                sslCertificateMetadataDetails.setAkmid(akmid);
+                sslCertificateMetadataDetails.setApplicationOwnerEmailId(appOwnerEmail);
+                sslCertificateMetadataDetails.setApplicationTag(applicationTag);
+                sslCertificateMetadataDetails.setApplicationName(applicationName);
+                sslCertificateMetadataDetails.setNotificationEmails(tagsOwner);
+            }
+            }
+        } else {
+            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "Getting Application Details by app name during Meta data creation ").
+                    put(LogMessage.MESSAGE, String.format("Application details will not insert/update in metadata  " +
+                                    "for an application =  [%s] ",  applicationName)).
+                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+                    build()));
+        }}
+
+        
+        CertificateData certDetails = null;
+        String nclmAccessToken = getNclmToken();	
+                
+        //Get Certificate Details
+		if(!StringUtils.isEmpty(nclmAccessToken)) {		                 
+            
+            certDetails = getLatestCertificateFromNCLM(sslCertificateRequest.getCertificateName(), nclmAccessToken, containerId);
+            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "populateSSLCertificateMetadataForOnboard").
+                    put(LogMessage.MESSAGE, String.format("Fetching certificate details  status = [%s]"
+                            , Objects.nonNull(certDetails))).build()));
+         
+        }
+        if (Objects.nonNull(certDetails) && certDetails.getCertificateId()>0) {
+            sslCertificateMetadataDetails.setCertificateId(certDetails.getCertificateId());
+            sslCertificateMetadataDetails.setCertificateName(certDetails.getCertificateName());
+            sslCertificateMetadataDetails.setCreateDate(certDetails.getCreateDate());
+            sslCertificateMetadataDetails.setExpiryDate(certDetails.getExpiryDate());
+            sslCertificateMetadataDetails.setAuthority(certDetails.getAuthority());
+            sslCertificateMetadataDetails.setCertificateStatus(certDetails.getCertificateStatus());
+            sslCertificateMetadataDetails.setContainerName(certDetails.getContainerName());
+            sslCertificateMetadataDetails.setDnsNames(certDetails.getDnsNames());
+            if(!sslCertificateRequest.getCertType().equalsIgnoreCase("internal")) {
+            	sslCertificateMetadataDetails.setCertType("external");
+            	sslCertificateRequest.setCertType("external");
+
+            }else {
+            	sslCertificateMetadataDetails.setCertType(sslCertificateRequest.getCertType());
+            	sslCertificateMetadataDetails.setDnsNames(certDetails.getDnsNames());
+            }
+
+        } else {
+            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                    put(LogMessage.ACTION, "populateSSLCertificateMetadataForOnboard").
+                    put(LogMessage.MESSAGE, String.format("Certificate Details is not available in NCLM for given " +
+                            "certificate = [%s]", sslCertificateRequest.getCertificateName())).
+                    build()));
+            return null;
+        }
+        
+        ResponseEntity<DirectoryObjects> userResponse = directoryService.searchByUPN(projectLeadEmail);
+        Object[] users = null;
+    	DirectoryUser dirUser = new DirectoryUser();
+    	if(userResponse.getStatusCode().equals(HttpStatus.OK)) {
+    		 users = userResponse.getBody().getData().getValues();
+    		 if(!ObjectUtils.isEmpty(users)) {
+    		 dirUser = (DirectoryUser) users[0];
+    		 certOwnerNtId = dirUser.getUserName();
+    		 displayName = dirUser.getDisplayName();
+    		 }
+    	}  
+	        sslCertificateMetadataDetails.setCertCreatedBy(certOwnerNtId);
+	        sslCertificateMetadataDetails.setCertOwnerEmailId(projectLeadEmail);
+	        sslCertificateMetadataDetails.setCertOwnerNtid(certOwnerNtId);
+	        sslCertificateMetadataDetails.setContainerId(containerId);
+	        
+	        sslCertificateRequest.setCertOwnerEmailId(projectLeadEmail);
+	        sslCertificateRequest.setCertOwnerNtid(certOwnerNtId);
+
+        log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+                put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+                put(LogMessage.ACTION, String.format("MetaData info details = [%s]", sslCertificateMetadataDetails.toString())).
+                build()));     
 
 
-		        SSLCertMetadata sslCertMetadata = new SSLCertMetadata(certMetadataPath, sslCertificateMetadataDetails);
-		        String jsonStr = JSONUtil.getJSON(sslCertMetadata);
-		        Map<String, Object> rqstParams = ControllerUtil.parseJson(jsonStr);
-		        rqstParams.put("path", certMetadataPath);
-		        return ControllerUtil.convetToJson(rqstParams);
+        SSLCertMetadata sslCertMetadata = new SSLCertMetadata(certMetadataPath, sslCertificateMetadataDetails);
+        String jsonStr = JSONUtil.getJSON(sslCertMetadata);
+        Map<String, Object> rqstParams = ControllerUtil.parseJson(jsonStr);
+        rqstParams.put("path", certMetadataPath);
+        return ControllerUtil.convetToJson(rqstParams);
+	}
+	
+	/**
+	 * Method to get the latesst certificate from NCLM
+	 * @param sslCertificateRequest
+	 * @param certManagerLogin
+	 * @return
+	 * @throws Exception
+	 */
+	   private CertificateData getLatestCertificateFromNCLM(String certName, String nclmAccessToken, int containerId) throws Exception {
+	        CertificateData certificateData=null;
+	        String findCertificateEndpoint = "/certmanager/findCertificate";
+	        String targetEndpoint = findCertificate.replace("certname", String.valueOf(certName)).replace("cid", String.valueOf(containerId));
+	        CertResponse response = reqProcessor.processCert(findCertificateEndpoint, "", nclmAccessToken, getCertmanagerEndPoint(targetEndpoint));
+	        Map<String, Object> responseMap = ControllerUtil.parseJson(response.getResponse());
+	        if (!MapUtils.isEmpty(responseMap) && (ControllerUtil.parseJson(response.getResponse()).get(SSLCertificateConstants.CERTIFICATES) != null)) {
+	            JsonParser jsonParser = new JsonParser();
+	            JsonObject jsonObject = (JsonObject) jsonParser.parse(response.getResponse());
+	            if (jsonObject != null) {
+	                JsonArray jsonArray = jsonObject.getAsJsonArray(SSLCertificateConstants.CERTIFICATES);
+	                certificateData = setLatestCertificateFromNCLM(certificateData, certName, jsonArray);
+	            }
+	        }
+	         return certificateData;
+	    }
+	      
+	   
+	   /**
+		 * @param certificateData
+		 * @param certName
+		 * @param jsonArray
+		 * @return
+		 */
+		private CertificateData setLatestCertificateFromNCLM(CertificateData certificateData, String certName,
+				JsonArray jsonArray) {
+			LocalDateTime  createdDate = null ;
+            LocalDateTime  certCreatedDate;
+            JsonArray jsonArrayvalid = new JsonArray();
+			for (int i = 0; i < jsonArray.size(); i++) {
+			    JsonObject jsonElements = jsonArray.get(i).getAsJsonObject();
+			    log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	                    put(LogMessage.ACTION, "setLatestCertificateFromNCLM").
+	                    put(LogMessage.MESSAGE, String.format("Certificate name from NCLM - [%s] and " +
+	                            "certificate name from pacbot - [%s]", jsonElements.get("sortedSubjectName").getAsString(),certName)).
+	                    build()));
+
+			    if ((Objects.equals(getCertficateName(jsonElements.get("sortedSubjectName").getAsString()), certName))
+			            && jsonElements.get(SSLCertificateConstants.CERTIFICATE_STATUS).getAsString().
+
+			            equalsIgnoreCase(SSLCertificateConstants.ACTIVE)) {
+			    	jsonArrayvalid.add(jsonElements);
+			    }
 			}
-			
-			/**
-			 * Method to get the latesst certificate from NCLM
-			 * @param sslCertificateRequest
-			 * @param certManagerLogin
-			 * @return
-			 * @throws Exception
-			 */
-			   private CertificateData getLatestCertificateFromNCLM(String certName, String nclmAccessToken, int containerId) throws Exception {
-			        CertificateData certificateData=null;
-			        String findCertificateEndpoint = "/certmanager/findCertificate";
-			        String targetEndpoint = findCertificate.replace("certname", String.valueOf(certName)).replace("cid", String.valueOf(containerId));
-			        CertResponse response = reqProcessor.processCert(findCertificateEndpoint, "", nclmAccessToken, getCertmanagerEndPoint(targetEndpoint));
-			        Map<String, Object> responseMap = ControllerUtil.parseJson(response.getResponse());
-			        if (!MapUtils.isEmpty(responseMap) && (ControllerUtil.parseJson(response.getResponse()).get(SSLCertificateConstants.CERTIFICATES) != null)) {
-			            JsonParser jsonParser = new JsonParser();
-			            JsonObject jsonObject = (JsonObject) jsonParser.parse(response.getResponse());
-			            if (jsonObject != null) {
-			                JsonArray jsonArray = jsonObject.getAsJsonArray(SSLCertificateConstants.CERTIFICATES);
-			                certificateData = setLatestCertificateFromNCLM(certificateData, certName, jsonArray);
-			            }
-			        }
-			         return certificateData;
+			    	for (int j = 0; j < jsonArrayvalid.size(); j++) {
+			    		JsonObject jsonElement = jsonArrayvalid.get(j).getAsJsonObject();
+			    	 if(j==0) {
+		                    createdDate = LocalDateTime.parse(validateString(jsonElement.get("NotBefore")).substring(0, 19));
+		                    }else if (j>0) {
+		                    	createdDate = jsonArrayvalid.get(j-1).getAsJsonObject().get(SSLCertificateConstants.CERTIFICATE_STATUS).getAsString().
+							            equalsIgnoreCase(SSLCertificateConstants.ACTIVE)?LocalDateTime.parse(validateString(jsonArrayvalid.get(j-1).getAsJsonObject().get("NotBefore")).substring(0, 19)):
+							            	LocalDateTime.parse(validateString(jsonArrayvalid.get(j).getAsJsonObject().get("NotBefore")).substring(0, 19));
+		                    }
+
+			    	certCreatedDate = LocalDateTime.parse(validateString(jsonElement.get("NotBefore")).substring(0, 19));
+                	if(!ObjectUtils.isEmpty(createdDate) && (createdDate.isBefore(certCreatedDate) || createdDate.isEqual(certCreatedDate))) {
+			        certificateData= new CertificateData();
+			        certificateData.setCertificateId(Integer.parseInt(jsonElement.get("certificateId").getAsString()));
+			        certificateData.setExpiryDate(validateString(jsonElement.get("NotAfter")));
+			        certificateData.setCreateDate(validateString(jsonElement.get("NotBefore")));
+			        certificateData.setContainerName(validateString(jsonElement.get("containerName")));
+			        certificateData.setCertificateStatus(validateString(jsonElement.get(SSLCertificateConstants.CERTIFICATE_STATUS)));
+			        certificateData.setCertificateName(certName);
+			        certificateData.setAuthority((!StringUtils.isEmpty(jsonElement.get("enrollServiceInfo")) ?
+			                 validateString(jsonElement.get("enrollServiceInfo").getAsJsonObject().get("name")) :
+			                 null));
+					certificateData.setPreviousCertId((!ObjectUtils.isEmpty(jsonElement.get("previous")) ? 
+							Integer.parseInt(jsonElement.get("previous").getAsString()) : null));
+					if(Objects.nonNull(jsonElement.getAsJsonObject("subjectAltName"))){
+	                    JsonObject subjectAltNameObject = jsonElement.getAsJsonObject("subjectAltName");
+	                    JsonArray jsonArr = subjectAltNameObject.getAsJsonArray("dns");
+	                    List<String> list = new ArrayList<>();
+	                    if(jsonArr!=null && jsonArr.size()>0) {
+		                    for(int index=0; index < jsonArr.size(); index++) {
+		                        list.add(jsonArr.get(index).getAsString());
+		                    }
+		                    certificateData.setDnsNames(list);
+						}
+			                }
+
+			        break;
 			    }
-			      
-			   
-			   /**
-				 * @param certificateData
-				 * @param certName
-				 * @param jsonArray
-				 * @return
-				 */
-				private CertificateData setLatestCertificateFromNCLM(CertificateData certificateData, String certName,
-						JsonArray jsonArray) {
-					LocalDateTime  createdDate = null ;
-		            LocalDateTime  certCreatedDate;
-		            JsonArray jsonArrayvalid = new JsonArray();
-					for (int i = 0; i < jsonArray.size(); i++) {
-					    JsonObject jsonElements = jsonArray.get(i).getAsJsonObject();
-					    log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-			                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-			                    put(LogMessage.ACTION, "setLatestCertificateFromNCLM").
-			                    put(LogMessage.MESSAGE, String.format("Certificate name from NCLM - [%s] and " +
-			                            "certificate name from pacbot - [%s]", jsonElements.get("sortedSubjectName").getAsString(),certName)).
-			                    build()));
+			    }
 
-					    if ((Objects.equals(getCertficateName(jsonElements.get("sortedSubjectName").getAsString()), certName))
-					            && jsonElements.get(SSLCertificateConstants.CERTIFICATE_STATUS).getAsString().
-					            equalsIgnoreCase(SSLCertificateConstants.ACTIVE)) {
-					    	jsonArrayvalid.add(jsonElements);
-					    }
-					}
-					    	for (int j = 0; j < jsonArrayvalid.size(); j++) {
-					    		JsonObject jsonElement = jsonArrayvalid.get(j).getAsJsonObject();
-					    	 if(j==0) {
-				                    createdDate = LocalDateTime.parse(validateString(jsonElement.get("NotBefore")).substring(0, 19));
-				                    }else if (j>0) {
-				                    	createdDate = jsonArrayvalid.get(j-1).getAsJsonObject().get(SSLCertificateConstants.CERTIFICATE_STATUS).getAsString().
-									            equalsIgnoreCase(SSLCertificateConstants.ACTIVE)?LocalDateTime.parse(validateString(jsonArrayvalid.get(j-1).getAsJsonObject().get("NotBefore")).substring(0, 19)):
-									            	LocalDateTime.parse(validateString(jsonArrayvalid.get(j).getAsJsonObject().get("NotBefore")).substring(0, 19));
-				                    }
+			return certificateData;
+		}
+		
+		
+		/**
+	     * API to onboard single certificate to tvault
+	     * @param userDetails
+	     * @param bearerToken
+	     * @return
+	     * @throws Exception 
+	     */
+		public ResponseEntity<String> onboardSingleCert(UserDetails userDetails, String token, String certType,
+				String commonname, String appName, String projectLeadEmail, String tagsOwner) throws Exception {
 
-					    	certCreatedDate = LocalDateTime.parse(validateString(jsonElement.get("NotBefore")).substring(0, 19));
-		                	if(!ObjectUtils.isEmpty(createdDate) && (createdDate.isBefore(certCreatedDate) || createdDate.isEqual(certCreatedDate))) {
-					        certificateData= new CertificateData();
-					        certificateData.setCertificateId(Integer.parseInt(jsonElement.get("certificateId").getAsString()));
-					        certificateData.setExpiryDate(validateString(jsonElement.get("NotAfter")));
-					        certificateData.setCreateDate(validateString(jsonElement.get("NotBefore")));
-					        certificateData.setContainerName(validateString(jsonElement.get("containerName")));
-					        certificateData.setCertificateStatus(validateString(jsonElement.get(SSLCertificateConstants.CERTIFICATE_STATUS)));
-					        certificateData.setCertificateName(certName);
-					        certificateData.setAuthority((!StringUtils.isEmpty(jsonElement.get("enrollServiceInfo")) ?
-					                 validateString(jsonElement.get("enrollServiceInfo").getAsJsonObject().get("name")) :
-					                 null));
-							certificateData.setPreviousCertId((!ObjectUtils.isEmpty(jsonElement.get("previous")) ? 
-									Integer.parseInt(jsonElement.get("previous").getAsString()) : null));
-							if(Objects.nonNull(jsonElement.getAsJsonObject("subjectAltName"))){
-			                    JsonObject subjectAltNameObject = jsonElement.getAsJsonObject("subjectAltName");
-			                    JsonArray jsonArr = subjectAltNameObject.getAsJsonArray("dns");
-			                    List<String> list = new ArrayList<>();
-			                    if(jsonArr!=null && jsonArr.size()>0) {
-				                    for(int index=0; index < jsonArr.size(); index++) {
-				                        list.add(jsonArr.get(index).getAsString());
-				                    }
-				                    certificateData.setDnsNames(list);
-								}
-					                }
-					        break;
-					    }
-					    }
+			SSLCertificateRequest sslCertificateRequest = new SSLCertificateRequest();
+			ResponseEntity<String> response;
+			JsonObject jsonObject = new JsonObject();
+			;
+			jsonObject.addProperty("commonname", commonname);
+			jsonObject.addProperty("certType", certType);
 
+			if (!isValidInputs(commonname, certType)) {
+				log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+						.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER))
+						.put(LogMessage.ACTION, "onboardSingleCert").put(LogMessage.MESSAGE, "Invalid user inputs")
+						.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).build()));
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[\"Invalid input values\"]}");
+			}
 
+			if (isCertAvailableInMetadata(jsonObject, token)) {
+				log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+						.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER))
+						.put(LogMessage.ACTION, "onboardSingleCert")
+						.put(LogMessage.MESSAGE, "Certificate already available in metadata.")
+						.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).build()));
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+						.body("{\"errors\":[\"Certificate already available in tvault\"]}");
+			}
 
-					return certificateData;
+			int containerId = 0;
+			List<Integer> containerList = new ArrayList<>();
+			sslCertificateRequest.setCertificateName(commonname);
+			sslCertificateRequest.setCertType(certType);
+			sslCertificateRequest.setAppName(appName);
+
+			if (certType.equalsIgnoreCase("internal")) {
+				containerList.add(private_single_san_ts_gp_id_test != 0 ? private_single_san_ts_gp_id_test
+						: private_single_san_ts_gp_id);
+			}
+
+			else {
+				CertificateData certDetailsExtSsan = null;
+				CertificateData certDetailsExtMsan = null;
+				String nclmAccessToken = getNclmToken();
+				int containerIdExtSsan = public_single_san_ts_gp_id_test != 0 ? public_single_san_ts_gp_id_test
+						: public_single_san_ts_gp_id;
+				int containerIdExtMsan = public_multi_san_ts_gp_id_test != 0 ? public_multi_san_ts_gp_id_test
+						: public_multi_san_ts_gp_id;
+				certDetailsExtSsan = getLatestCertificateFromNCLM(commonname, nclmAccessToken, containerIdExtSsan);
+				if ((!ObjectUtils.isEmpty(certDetailsExtSsan))
+						&& (!ObjectUtils.isEmpty(certDetailsExtSsan.getCertificateName()))) {
+					containerList.add(containerIdExtSsan);
 				}
-				
-				
-				/**
-			     * API to onboard single certificate to tvault
-			     * @param userDetails
-			     * @param bearerToken
-			     * @return
-			     * @throws Exception 
-			     */
-			    public ResponseEntity<String> onboardSingleCert(UserDetails userDetails,  String token, String certType, 
-			    									String commonname,  String appName) throws Exception {
-			    	
-			    	SSLCertificateRequest sslCertificateRequest = new SSLCertificateRequest();
-			    	ResponseEntity<String> response;
-			    	JsonObject jsonObject = new JsonObject();;
-			    	jsonObject.addProperty("commonname",commonname);
-			    	jsonObject.addProperty("certType",certType);
-			    	
-			    	if (!isValidInputs(commonname, certType)) {
-						log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
-								.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER))
-								.put(LogMessage.ACTION, "onboardSingleCert")
-								.put(LogMessage.MESSAGE, "Invalid user inputs")
-								.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).build()));
-						return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[\"Invalid input values\"]}");
-					}
-			    	
-			    	if(isCertAvailableInMetadata(jsonObject, token)) {
-			    		log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
-								.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER))
-								.put(LogMessage.ACTION, "onboardSingleCert")
-								.put(LogMessage.MESSAGE, "Certificate already available in metadata.")
-								.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).build()));
-						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"errors\":[\"Certificate already available in tvault\"]}");
-			    	}
-			    	
-			    	int containerId=0;
-			    	List<Integer> containerList = new ArrayList<>();
-			    	sslCertificateRequest.setCertificateName(commonname);
-			    	sslCertificateRequest.setCertType(certType);
-			    	sslCertificateRequest.setAppName(appName);
+				certDetailsExtMsan = getLatestCertificateFromNCLM(commonname, nclmAccessToken, containerIdExtMsan);
+				if ((!ObjectUtils.isEmpty(certDetailsExtMsan))
+						&& (!ObjectUtils.isEmpty(certDetailsExtMsan.getCertificateName()))) {
+					containerList.add(containerIdExtMsan);
+				}
 
-			    	if(certType.equalsIgnoreCase("internal")) {
-			    		containerList.add(private_single_san_ts_gp_id_test!=0?private_single_san_ts_gp_id_test:private_single_san_ts_gp_id);
-			    	}
-			    	
-			    	else {
-			    		CertificateData certDetailsExtSsan = null;
-			    		CertificateData certDetailsExtMsan = null;
-				        String nclmAccessToken = getNclmToken();
-				        int containerIdExtSsan=public_single_san_ts_gp_id_test!=0?public_single_san_ts_gp_id_test:public_single_san_ts_gp_id;
-				        int containerIdExtMsan=public_multi_san_ts_gp_id_test!=0?public_multi_san_ts_gp_id_test:public_multi_san_ts_gp_id;
-			    		certDetailsExtSsan = getLatestCertificateFromNCLM(commonname, nclmAccessToken, containerIdExtSsan);
-			    		if((!ObjectUtils.isEmpty(certDetailsExtSsan)) && (!ObjectUtils.isEmpty(certDetailsExtSsan.getCertificateName()))) {
-			    			containerList.add(containerIdExtSsan);
-			    		}
-			    		certDetailsExtMsan = getLatestCertificateFromNCLM(commonname, nclmAccessToken, containerIdExtMsan);
-			    		if((!ObjectUtils.isEmpty(certDetailsExtMsan)) && (!ObjectUtils.isEmpty(certDetailsExtMsan.getCertificateName()))) {
-			    			containerList.add(containerIdExtMsan);
-			    		}
-			    		
-			    	}
-			    	if(containerList.size() >0) {
-			    		for(int i=0; i<containerList.size();i++) {
-			    	response = onboardCertificate(sslCertificateRequest,userDetails,containerList.get(i),"");
-			    	
-			    	if (response !=null && !HttpStatus.OK.equals(response.getStatusCode())) {
-			    		log.error(JSONUtil.getJSON(ImmutableMap.<String, String> builder()
-								.put(LogMessage.USER,ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
+			}
+			if (containerList.size() > 0) {
+				for (int i = 0; i < containerList.size(); i++) {
+					response = onboardCertificate(sslCertificateRequest, userDetails, containerList.get(i), tagsOwner,
+							"");
+
+					if (response != null && !HttpStatus.OK.equals(response.getStatusCode())) {
+						log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+								.put(LogMessage.USER,
+										ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
 								.put(LogMessage.ACTION, "onboardSingleCert")
-								.put(LogMessage.MESSAGE,String.format(
-												"Onboarding failed for certificate name [%s]", commonname ))
+								.put(LogMessage.MESSAGE,
+										String.format("Onboarding failed for certificate name [%s]", commonname))
 								.build()));
-			    		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[\"Certificate onboard failed\"]}");
-			    	}
-			    	
-			    	else {
-			    		log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-			                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-			                    put(LogMessage.ACTION, "onboardSingleCert").
-			                    put(LogMessage.MESSAGE, String.format("Onbaording successful for certificate name [%s]", commonname )).
-			                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-			                    build()));
-			    	}
-			    		}
-			    	}else {
-			    		log.error(JSONUtil.getJSON(ImmutableMap.<String, String> builder()
-								.put(LogMessage.USER,ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
+						return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+								.body("{\"errors\":[\"Certificate onboard failed\"]}");
+					}
+
+					else {
+						log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+								.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER))
 								.put(LogMessage.ACTION, "onboardSingleCert")
-								.put(LogMessage.MESSAGE,String.format(
-												"Onboarding failed for certificate name [%s]. Certificate not available in NCLM.", commonname ))
+								.put(LogMessage.MESSAGE,
+										String.format("Onbaording successful for certificate name [%s]", commonname))
+								.put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL))
 								.build()));
-			    		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[\"Certificate onboard failed\"]}");
-			    	}
-			    	return ResponseEntity.status(HttpStatus.OK).body("{\"messages\":[\"ssl certificate onboard successfully\"]}");
-			    }
-			    
-			    /**
-			     * Get the target System Group ID
-			     * @param sslCertType
-			     * @return
-			     */
-			    private int getTargetSystemGroupIdForDev(SSLCertType sslCertType) {
-			        int ts_gp_id = private_single_san_ts_gp_id_test;
-			        switch (sslCertType) {
-			            case PRIVATE_SINGLE_SAN:
-			                ts_gp_id = private_single_san_ts_gp_id_test!=0?private_single_san_ts_gp_id_test:private_single_san_ts_gp_id;
-			                break;
-			            case PUBLIC_SINGLE_SAN:
-			                ts_gp_id = public_single_san_ts_gp_id_test!=0?public_single_san_ts_gp_id_test:public_single_san_ts_gp_id; //2276
-			                break;
-			            case PUBLIC_MULTI_SAN:
-			                ts_gp_id = public_multi_san_ts_gp_id_test!=0?public_multi_san_ts_gp_id_test:public_multi_san_ts_gp_id; //2277
-			                break;
-			        }
-			        return ts_gp_id;
-			    }
+					}
+				}
+			} else {
+				log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder()
+						.put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER).toString())
+						.put(LogMessage.ACTION, "onboardSingleCert")
+						.put(LogMessage.MESSAGE, String.format(
+								"Onboarding failed for certificate name [%s]. Certificate not available in NCLM.",
+								commonname))
+						.build()));
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body("{\"errors\":[\"Certificate onboard failed\"]}");
+			}
+			return ResponseEntity.status(HttpStatus.OK)
+					.body("{\"messages\":[\"ssl certificate onboard successfully\"]}");
+		}
+	    
+	    /**
+	     * Get the target System Group ID
+	     * @param sslCertType
+	     * @return
+	     */
+	    private int getTargetSystemGroupIdForDev(SSLCertType sslCertType) {
+	        int ts_gp_id = private_single_san_ts_gp_id_test;
+	        switch (sslCertType) {
+	            case PRIVATE_SINGLE_SAN:
+	                ts_gp_id = private_single_san_ts_gp_id_test!=0?private_single_san_ts_gp_id_test:private_single_san_ts_gp_id;
+	                break;
+	            case PUBLIC_SINGLE_SAN:
+	                ts_gp_id = public_single_san_ts_gp_id_test!=0?public_single_san_ts_gp_id_test:public_single_san_ts_gp_id; //2276
+	                break;
+	            case PUBLIC_MULTI_SAN:
+	                ts_gp_id = public_multi_san_ts_gp_id_test!=0?public_multi_san_ts_gp_id_test:public_multi_san_ts_gp_id; //2277
+	                break;
+	        }
+	        return ts_gp_id;
+	    }
 
 	public ResponseEntity<String> deleteApproleFromCertificate(CertificateApprole certificateApprole,
 			UserDetails userDetails) {
@@ -8487,6 +8500,7 @@ String policyPrefix = getCertificatePolicyPrefix(access, certType);
 			   			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[\"Access denied: No permission to add users to this certificate\"]}");
 			   		}
 			   	}
+
 
 
 	/**
@@ -9165,5 +9179,6 @@ String policyPrefix = getCertificatePolicyPrefix(access, certType);
 	}
 }
 				 
+
 
 
