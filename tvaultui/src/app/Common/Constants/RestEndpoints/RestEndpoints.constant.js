@@ -512,7 +512,11 @@ readTextFile("../apiUrls.json");
             name: 'onboardSslCertificates',
             url: '/v2/sslcert/onboardSSLcertificate',
             method: 'POST'
-        }
+         }, {
+             name: 'updateCertificate',
+             url: '/v2/sslcert',
+             method: 'PUT' 
+         }
     ]
     });
 })( angular.module( 'vault.constants.RestEndpoints', []));

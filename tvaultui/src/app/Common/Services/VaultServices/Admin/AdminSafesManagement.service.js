@@ -503,6 +503,11 @@
             },
             onboardSslCertificates: function (payload, url) {
                 return ServiceEndpoint.onboardSslCertificates.makeRequest(payload, url).then(function(response) {
+                	 return response;
+                });
+                },
+            updateCertificate: function (payload, url) {
+                return ServiceEndpoint.updateCertificate.makeRequest(payload, url).then(function(response) {
                     return response;
                 });
             },

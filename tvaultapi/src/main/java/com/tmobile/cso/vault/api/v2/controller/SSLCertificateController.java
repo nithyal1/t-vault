@@ -521,6 +521,7 @@ public class SSLCertificateController {
 	}
 
 	/**
+<<<<<<< Upstream, based on 0511286aee5154d53d4e93f9a6ca066f4b8c953b
 	 * Get all on-board pending certificates from nclm
 	 * @return
 	 */
@@ -551,5 +552,17 @@ public class SSLCertificateController {
 		return sslCertificateService.onboardSSLcertificate(userDetails, token, sslCertificateRequest);
 	}
 
+
+	 /** To Update SSL Certificate metadata
+	 * @param sslCertificateRequest
+	 * @return
+	 */
+	@ApiOperation(value = "${SSLCertificateController.ssledit.value}", notes = "${SSLCertificateController.ssledit.notes}", hidden = false)
+	@PutMapping(value="/v2/sslcert/",consumes="application/json",produces="application/json")
+	public ResponseEntity<String> updateSSLCertificate(HttpServletRequest request, @RequestHeader(value=
+			"vault-token") String token,@Valid @RequestBody CertificateUpdateRequest certificateUpdateRequest)  {
+		UserDetails userDetails = (UserDetails) request.getAttribute(USER_DETAILS_STRING);
+		return sslCertificateService.updateSSLCertificate(certificateUpdateRequest,userDetails,token);
+	}
 
 }

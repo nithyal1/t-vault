@@ -616,11 +616,13 @@
                         $scope.error('md');
                     });
             }
+            /*
             if($scope.selectedTab == 1){            	
-           	 getCertificates("", null, null,"external");
+            	getCertificates("", null, null,"external");
            }else{        	   
-           getCertificates("", null, null,"internal");
+        	   getCertificates("", null, null,"internal");
            }
+           */
         };
 
         $scope.getExtCertificates = function () { 
@@ -642,7 +644,7 @@
        	 if($scope.certSearchValue == ""){
        		 getCertificates("", null, null,"internal");
        	 }else{
-        		getCertificates($scope.certSearchValue, null, null,"internal");
+       		 getCertificates($scope.certSearchValue, null, null,"internal");
         	}
        }
        
@@ -686,9 +688,10 @@
                     $scope.errorMessage = AdminSafesManagement.getTheRightErrorMessage(response);
                     error('md');
                 }
-                $scope.isLoadingData = false;
-                $scope.isLoadingCerts = false;
-            },
+                                	
+                    $scope.isLoadingData = false;
+                    $scope.isLoadingCerts = false; 
+                },
             function (error) {
                 // Error handling function
                 console.log(error);
@@ -736,7 +739,7 @@
             if ($scope.searchValue != '' && $scope.searchValue != undefined && $scope.searchValue.length > 2 && $scope.certSearchValue != $scope.searchValue) {                
             	$scope.certSearchValue = $scope.searchValue;
             	if($scope.selectedTab == 1){
-                    getCertificates($scope.certSearchValue, null, null,"external");
+            		getCertificates($scope.certSearchValue, null, null,"external");
                 	}else {
                 		getCertificates($scope.certSearchValue, null, null,"internal");
                 	}
@@ -747,7 +750,7 @@
             if($scope.certSearchValue != $scope.searchValue) {            	
                 $scope.certSearchValue = $scope.searchValue;
                 if($scope.selectedTab == 1){
-                    getCertificates("", null, null,"external");
+                	getCertificates("", null, null,"external");
                 	}else {
                 		getCertificates("", null, null,"internal");
                 	}
@@ -1791,6 +1794,7 @@
             }else{
                 getCertificates("", null, null,"internal");
             }
+
         };
 
         $scope.collapseADDetails = function() {
