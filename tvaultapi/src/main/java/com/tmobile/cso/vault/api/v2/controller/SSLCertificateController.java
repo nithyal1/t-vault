@@ -521,7 +521,6 @@ public class SSLCertificateController {
 	}
 
 	/**
-<<<<<<< Upstream, based on 0511286aee5154d53d4e93f9a6ca066f4b8c953b
 	 * Get all on-board pending certificates from nclm
 	 * @return
 	 */
