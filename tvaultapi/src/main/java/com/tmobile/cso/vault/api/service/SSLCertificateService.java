@@ -6520,104 +6520,113 @@ public ResponseEntity<String> getRevocationReasons(Integer certificateId, String
      * @param offset
      * @return
      */
-    public ResponseEntity<String> getAllCertificates(String token, String certName, Integer limit, Integer offset) {
-        log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-                put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-                put(LogMessage.ACTION, "getAllCertificates").
-                put(LogMessage.MESSAGE, "Trying to get all certificates").
-                put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-                build()));       
-        String path = SSLCertificateConstants.SSL_CERT_PATH ;        
-        String extPath = SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH ;        
+	 public ResponseEntity<String> getAllCertificates(String token, String certName, Integer limit, Integer offset) {
+	        log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	                put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	                put(LogMessage.ACTION, "getAllCertificates").
+	                put(LogMessage.MESSAGE, "Trying to get all certificates").
+	                put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+	                build()));       
+	        String path = SSLCertificateConstants.SSL_CERT_PATH ;        
+	        String extPath = SSLCertificateConstants.SSL_EXTERNAL_CERT_PATH ;        
 
-        Response response;
-        String certListStr = "";
+	        Response response;
+	        String certListStr = "";
+	        List<String> certNames = new ArrayList<String>();
+	        List<String> certNamesExt = new ArrayList<String>();
 
-        response = getMetadata(token, path);        
-        if (HttpStatus.OK.equals(response.getHttpstatus())) {
-            String pathStr= "";
-            String endPoint = "";
-            Response metadataResponse = new Response();
-            JsonParser jsonParser = new JsonParser();
-            JsonArray responseArray = new JsonArray();
-            JsonObject metadataJsonObj=new JsonObject();            
-            JsonObject jsonObject = (JsonObject) jsonParser.parse(response.getResponse());
-            JsonArray jsonArray = jsonObject.getAsJsonObject("data").getAsJsonArray("keys");
-            List<String> certNames = geMatchCertificates(jsonArray,certName);            
-            
-            response = getMetadata(token, extPath);
-            JsonObject jsonObjectExt = (JsonObject) jsonParser.parse(response.getResponse());
-            JsonArray jsonArrayExt = jsonObjectExt.getAsJsonObject("data").getAsJsonArray("keys");
-            List<String> certNamesExt = geMatchCertificates(jsonArrayExt,certName);            
-            certNames.addAll(certNamesExt);
-            Collections.sort(certNames);
-            
-            if(limit == null) {
-                limit = certNames.size();
-            }
-            if (offset ==null) {
-                offset = 0;
-            }
+	        response = getMetadata(token, path);        
+	       
+	            String pathStr= "";
+	            String endPoint = "";
+	            Response metadataResponse = new Response();
+	            JsonParser jsonParser = new JsonParser();
+	            JsonArray responseArray = new JsonArray();
+	            JsonObject metadataJsonObj=new JsonObject();    
+	            if (HttpStatus.OK.equals(response.getHttpstatus())) {
+	            JsonObject jsonObject = (JsonObject) jsonParser.parse(response.getResponse());
+	            JsonArray jsonArray = jsonObject.getAsJsonObject("data").getAsJsonArray("keys");
+	            certNames = geMatchCertificates(jsonArray,certName);            
+	            }
+	            
+	            response = getMetadata(token, extPath);
+	            if(HttpStatus.OK.equals(response.getHttpstatus())) {
+	            JsonObject jsonObjectExt = (JsonObject) jsonParser.parse(response.getResponse());
+	            JsonArray jsonArrayExt = jsonObjectExt.getAsJsonObject("data").getAsJsonArray("keys");
+	            certNamesExt = geMatchCertificates(jsonArrayExt,certName);            
+	            certNames.addAll(certNamesExt);
+	            }
+	            
+	            if (ObjectUtils.isEmpty(certNames)) {
+	                log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	                        put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	                        put(LogMessage.ACTION, "getAllCertificates").
+	                        put(LogMessage.MESSAGE, "Retrieved empty certificate list from metadata").
+	                        put(LogMessage.STATUS, response.getHttpstatus().toString()).
+	                        put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+	                        build()));
+	                return ResponseEntity.status(HttpStatus.OK).body(certListStr);
+	            }
+	            else if(!ObjectUtils.isEmpty(certNames)){
+	            Collections.sort(certNames);
+	            
+	            if(limit == null) {
+	                limit = certNames.size();
+	            }
+	            if (offset ==null) {
+	                offset = 0;
+	            }
+	            
 
-            int maxVal = certNames.size()> (limit+offset)?limit+offset : certNames.size();
-            for (int i = offset; i < maxVal; i++) {            	
-                endPoint = certNames.get(i).replaceAll("^\"+|\"+$", "");
-                if(certNamesExt.contains(certNames.get(i))) {  
-                	pathStr = extPath + TVaultConstants.PATH_DELIMITER + endPoint;                
-                }else{
-                	pathStr = path + TVaultConstants.PATH_DELIMITER + endPoint;
-                }
-                metadataResponse = reqProcessor.process("/sslcert", "{\"path\":\"" + pathStr + "\"}", token);
-                if (HttpStatus.OK.equals(metadataResponse.getHttpstatus())) {
-                    JsonObject certObj = ((JsonObject) jsonParser.parse(metadataResponse.getResponse())).getAsJsonObject("data");
-                    certObj.remove("users");
-                    certObj.remove("groups");
-                    responseArray.add(certObj);
-                }
-            }
+	            int maxVal = certNames.size()> (limit+offset)?limit+offset : certNames.size();
+	            for (int i = offset; i < maxVal; i++) {            	
+	                endPoint = certNames.get(i).replaceAll("^\"+|\"+$", "");
+	                if(certNamesExt.contains(certNames.get(i))) {  
+	                	pathStr = extPath + TVaultConstants.PATH_DELIMITER + endPoint;                
+	                }else{
+	                	pathStr = path + TVaultConstants.PATH_DELIMITER + endPoint;
+	                }
+	                metadataResponse = reqProcessor.process("/sslcert", "{\"path\":\"" + pathStr + "\"}", token);
+	                if (HttpStatus.OK.equals(metadataResponse.getHttpstatus())) {
+	                    JsonObject certObj = ((JsonObject) jsonParser.parse(metadataResponse.getResponse())).getAsJsonObject("data");
+	                    certObj.remove("users");
+	                    certObj.remove("groups");
+	                    responseArray.add(certObj);
+	                }
+	            }
 
-            if(ObjectUtils.isEmpty(responseArray)) {
-                log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-                        put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-                        put(LogMessage.ACTION, "get ssl metadata").
-                        put(LogMessage.MESSAGE, "Certificates metadata is not available").
-                        put(LogMessage.STATUS, metadataResponse.getHttpstatus().toString()).
-                        put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-                        build()));
-            }
-            metadataJsonObj.add("keys", responseArray);
-            metadataJsonObj.addProperty("offset", offset);
-            certListStr = metadataJsonObj.toString();
+	            if(ObjectUtils.isEmpty(responseArray)) {
+	                log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	                        put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	                        put(LogMessage.ACTION, "get ssl metadata").
+	                        put(LogMessage.MESSAGE, "Certificates metadata is not available").
+	                        put(LogMessage.STATUS, metadataResponse.getHttpstatus().toString()).
+	                        put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+	                        build()));
+	            }
+	            metadataJsonObj.add("keys", responseArray);
+	            metadataJsonObj.addProperty("offset", offset);
+	            certListStr = metadataJsonObj.toString();
 
-            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-                    put(LogMessage.ACTION, "getAllCertificates").
-                    put(LogMessage.MESSAGE, "All Certificates fetched from metadata").
-                    put(LogMessage.STATUS, response.getHttpstatus().toString()).
-                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-                    build()));
-            return ResponseEntity.status(response.getHttpstatus()).body(certListStr);
-        }
-        else if (HttpStatus.NOT_FOUND.equals(response.getHttpstatus())) {
-            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-                    put(LogMessage.ACTION, "getAllCertificates").
-                    put(LogMessage.MESSAGE, "Retrieved empty certificate list from metadata").
-                    put(LogMessage.STATUS, response.getHttpstatus().toString()).
-                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-                    build()));
-            return ResponseEntity.status(HttpStatus.OK).body(certListStr);
-        }
-        log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
-                put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
-                put(LogMessage.ACTION, "getAllCertificates").
-                put(LogMessage.MESSAGE, "Failed to get certificate list from metadata").
-                put(LogMessage.STATUS, response.getHttpstatus().toString()).
-                put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
-                build()));
+	            log.debug(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	                    put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	                    put(LogMessage.ACTION, "getAllCertificates").
+	                    put(LogMessage.MESSAGE, "All Certificates fetched from metadata").
+	                    put(LogMessage.STATUS, response.getHttpstatus().toString()).
+	                    put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+	                    build()));
+	            return ResponseEntity.status(response.getHttpstatus()).body(certListStr);
+	            }     
+	            log.error(JSONUtil.getJSON(ImmutableMap.<String, String>builder().
+	                put(LogMessage.USER, ThreadLocalContext.getCurrentMap().get(LogMessage.USER)).
+	                put(LogMessage.ACTION, "getAllCertificates").
+	                put(LogMessage.MESSAGE, "Failed to get certificate list from metadata").
+	                put(LogMessage.STATUS, response.getHttpstatus().toString()).
+	                put(LogMessage.APIURL, ThreadLocalContext.getCurrentMap().get(LogMessage.APIURL)).
+	                build()));
 
-        return ResponseEntity.status(response.getHttpstatus()).body(certListStr);
-    }   
+	        return ResponseEntity.status(response.getHttpstatus()).body(certListStr);
+	    }    
     /**
 	 * Method to validate the certificate name
 	 *
