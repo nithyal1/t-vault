@@ -68,6 +68,8 @@ public class SSLCertificateRequest implements Serializable {
 	@NotBlank
 	private String notificationEmail;
 	
+	private boolean createdInAPI;
+	
 
 	public String getNotificationEmail() {
 		return notificationEmail;
@@ -140,6 +142,12 @@ public class SSLCertificateRequest implements Serializable {
 		this.targetSystem = targetSystem;
 	}
 
+	public boolean isCreatedInAPI() {
+		return createdInAPI;
+	}
+	public void setCreatedInAPI(boolean createdInAPI) {
+		this.createdInAPI = createdInAPI;
+	}
 
 	@Override
 	public String toString() {
