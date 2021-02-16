@@ -25,7 +25,7 @@ function exists {
 
 APPS_TO_BUILD=NONE
 PKG_TYPE=NONE
-UI=NEW
+UI=OLD
 
 function usage {
    if [ $# -lt 4 ]; then
