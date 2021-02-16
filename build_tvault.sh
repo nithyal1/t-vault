@@ -141,21 +141,21 @@ if [[ "$APPS_TO_BUILD" == "UI_ONLY"  || "$APPS_TO_BUILD" == "ALL" ]]; then
       exit 1  
    fi
    
-  if [[ "$UI" == "NEW" ]]; then
+ 
    #New UI build
 
-   UI_DIR=$BASEDIR/tvaultuiv2
-   cd $UI_DIR
-   echo "Clean up existing node_modules directory..."
-   echo "Removing $UI_DIR/node_modules/ ..."
-   rm -rf node_modules
-   rm -rf build
-   echo "Completed removing the existing node_modules and build directory..."
+   #UI_DIR=$BASEDIR/tvaultuiv2
+   #cd $UI_DIR
+   #echo "Clean up existing node_modules directory..."
+   #echo "Removing $UI_DIR/node_modules/ ..."
+   #rm -rf node_modules
+   #rm -rf build
+   #echo "Completed removing the existing node_modules and build directory..."
 
-   npm install
-   npm run build
+   #npm install
+   #npm run build
 
- else
+
    UI_DIR=$BASEDIR/tvaultui
    cd $UI_DIR
    echo "Clean up existing node_modules directory..."
@@ -171,7 +171,7 @@ if [[ "$APPS_TO_BUILD" == "UI_ONLY"  || "$APPS_TO_BUILD" == "ALL" ]]; then
    bower install --allow-root
    #gulp serve:live
    gulp build   
- fi
+
 
    UI_DESTINATION_DIR=$COMPONENTS_DIR/web/nginx/html
    echo "Copying Vault UI to $UI_DESTINATION_DIR"
