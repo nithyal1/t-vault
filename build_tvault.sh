@@ -25,7 +25,6 @@ function exists {
 
 APPS_TO_BUILD=NONE
 PKG_TYPE=NONE
-UI=OLD
 
 function usage {
    if [ $# -lt 4 ]; then
@@ -141,21 +140,6 @@ if [[ "$APPS_TO_BUILD" == "UI_ONLY"  || "$APPS_TO_BUILD" == "ALL" ]]; then
       exit 1  
    fi
    
- 
-   #New UI build
-
-   #UI_DIR=$BASEDIR/tvaultuiv2
-   #cd $UI_DIR
-   #echo "Clean up existing node_modules directory..."
-   #echo "Removing $UI_DIR/node_modules/ ..."
-   #rm -rf node_modules
-   #rm -rf build
-   #echo "Completed removing the existing node_modules and build directory..."
-
-   #npm install
-   #npm run build
-
-
    UI_DIR=$BASEDIR/tvaultui
    cd $UI_DIR
    echo "Clean up existing node_modules directory..."
@@ -170,16 +154,15 @@ if [[ "$APPS_TO_BUILD" == "UI_ONLY"  || "$APPS_TO_BUILD" == "ALL" ]]; then
    npm install
    bower install --allow-root
    #gulp serve:live
-   gulp build   
 
-
+   gulp build
    UI_DESTINATION_DIR=$COMPONENTS_DIR/web/nginx/html
    echo "Copying Vault UI to $UI_DESTINATION_DIR"
    rm -rf $COMPONENTS_DIR/web/nginx/html/*
-   cp -rf $UI_DIR/build/* $UI_DESTINATION_DIR/.
+   cp -rf $UI_DIR/app/* $UI_DESTINATION_DIR/.
 
-   #mkdir -p $UI_DESTINATION_DIR/styles/sass/components/
-   #cp $UI_DIR/src/app/sass/components/jquery-ui.css $UI_DESTINATION_DIR/styles/sass/components/
+   mkdir -p $UI_DESTINATION_DIR/styles/sass/components/
+   cp $UI_DIR/src/app/sass/components/jquery-ui.css $UI_DESTINATION_DIR/styles/sass/components/
    if [[ "$PKG_TYPE" == "NONE" ]]; then
       exit 0;
    fi
